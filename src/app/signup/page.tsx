@@ -6,6 +6,15 @@ import { registerPatient } from "@/services/apiService";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [accepted, setAccepted] = useState(false);
+  const handleConfirm = () => {
+    
+    if (accepted) {
+      alert("ยืนยันแล้ว ✅");
+    } else {
+      alert("กรุณายอมรับข้อตกลงก่อนนะครับ ❗");
+    }
+  };
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -36,7 +45,7 @@ export default function SignupPage() {
 
     try {
       await registerPatient(formData);
-      router.push("/termservice"); 
+      router.push("/login"); 
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -67,7 +76,20 @@ export default function SignupPage() {
               />
             </div>
           ))}
-
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="agree"
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+              className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <label htmlFor="agree" className="text-gray-700 cursor-pointer">
+              <a href="/termservice" className="text-blue-600 underline">
+                ฉันยอมรับเงื่อนไขและข้อตกลงการใช้งาน
+              </a>
+            </label>
+          </div>
           <button
             type="submit"
             disabled={loading}

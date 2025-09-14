@@ -32,7 +32,6 @@ export async function registerPatient(formData) {
 
 export async function getProfile() {
     const res = await http.get(`/user/v1/patient/me`);
-    console.log(res);
     const data = await res.data;
 
     if (res.status === 401) throw new Error("Unauthorized. Please login again.");

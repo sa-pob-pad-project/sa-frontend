@@ -27,7 +27,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     }
 
     // localStorage.setItem("access_token", data.access_token);
-    router.push("/dashboard");
+    router.push("/landing_page");
 
   } catch (err: any) {
     if (err?.response?.status === 401 || err?.response?.status === 400) {

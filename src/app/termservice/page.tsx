@@ -11,7 +11,7 @@ export default function TermServicePage() {
 
       <nav className="w-full max-w-3xl bg-[#AFFFD5] p-4 rounded-2xl shadow-md flex items-center mb-6">
         <button
-          onClick={() => router.push("/welcome")}
+          onClick={() => router.push("/signup")}
           className="flex items-center text-black hover:scale-105 transition-transform"
         >
           <ArrowLeft className="w-6 h-6 mr-2" />
@@ -61,7 +61,7 @@ export default function TermServicePage() {
 
       <div className="w-full max-w-3xl bg-green-700 p-6 rounded-2xl shadow-md mt-6 cursor-pointer hover:scale-105 transition-transform">
         <p className="text-white text-center text-xl font-bold">
-          <a href="/landing_page">
+          <a>
             การใช้แอปฯ ถือว่าคุณยอมรับข้อกำหนดและเงื่อนไขนี้
           </a>
         </p>
