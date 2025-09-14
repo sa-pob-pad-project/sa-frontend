@@ -1,4 +1,5 @@
 import { http } from "@/libs/http";
+import { ObjectUtils } from "@/libs/objectUtils";
 
 export const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
@@ -50,6 +51,7 @@ export async function getProfile() {
 }
 
 function calculateAge(birthDate) {
+    if (ObjectUtils.isEmpty(birthDate)) return null;
     const birth = new Date(birthDate);
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
