@@ -26,7 +26,6 @@ const handleSubmit = async (e: React.FormEvent) => {
       throw new Error("Incorrect ID or Password"); 
     }
 
-    // localStorage.setItem("access_token", data.access_token);
     router.push("/landing_page");
 
   } catch (err: any) {
