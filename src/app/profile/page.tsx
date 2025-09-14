@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getProfile } from "@/services/apiService";
+import { ArrowLeft } from "lucide-react"; 
 
 interface Profile {
   firstName: string;
@@ -48,6 +49,13 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="bg-green-500 text-white rounded-2xl p-6 shadow-md">
+                <button
+          onClick={() => router.push("/landing_page")}
+          className="flex items-center text-black hover:scale-105 transition-transform"
+        >
+          <ArrowLeft className="w-6 h-6 mr-2" />
+        </button>
+
         <div className="flex flex-col items-center">
           <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-gray-400 text-4xl">
             👤
