@@ -57,29 +57,35 @@ export default function LandingPage() {
                 )}
             </nav>
 
-            <h1 className="text-black text-center text-3xl font-semibold my-6">ยินดีต้อนรับสู่ระบบนัดหมอ</h1>
+            <h1 className="text-green-800 text-center text-3xl font-semibold my-6">ยินดีต้อนรับสู่ระบบนัดหมอ</h1>
             <div className="my-6 text-gray-700">
-                <p className="text-black text-lg font-medium mb-4">เมนู :</p>
+                <p className="text-green-800 text-lg font-medium mb-4">เมนู :</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 transition-transform">
+                <div 
+                onClick={() => router.push("/landing_page/book_app")}
+                className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 hover:bg-green-300 transition-transform">
                     จองคิว
                 </div>
                 <div 
                  onClick={() => router.push("/landing_page/history_app")}
-                 className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 transition-transform">
+                 className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 hover:bg-green-300 transition-transform">
                     ประวัติการนัดหมอ
                 </div>
-                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 transition-transform">
+                <div 
+                onClick={() => router.push("/landing_page/history_drug")}
+                className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 hover:bg-green-300 transition-transform">
                     ประวัติการสั่งยา
                 </div>
-                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 transition-transform">
+                <div
+                onClick={() => router.push("/landing_page/check_rights")}
+                className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 hover:bg-green-300 transition-transformm">
                     เช็คสิทธ์รักษา
                 </div>
             </div>
 
-            <h2 className="text-black text-lg font-medium mb-4">นัดหมายที่จะมาถึง :</h2>
+            <h2 className="text-green-800 text-lg font-medium mb-4">นัดหมายที่จะมาถึง :</h2>
 
             <div className="space-y-4">
                 <div className="bg-[#AFFFD5] text-white p-4 rounded-3xl flex justify-between items-center shadow-md">
@@ -87,7 +93,7 @@ export default function LandingPage() {
                         <p className="text-black font-semibold">ชื่อ นามสกุล</p>
                         <p className="text-black text-sm">วัน เดือน ปี เวลา</p>
                     </div>
-                    <button className="bg-green-100 px-4 py-2 rounded-2xl hover:bg-green-800 transition-colors">
+                    <button className="bg-green-100 px-4 py-2 rounded-2xl hover:bg-gray-400 transition-colors">
                         <p className="text-black">รายละเอียด</p>
                     </button>
                 </div>
@@ -96,7 +102,7 @@ export default function LandingPage() {
                         <p className="text-black font-semibold">ชื่อ นามสกุล</p>
                         <p className="text-black text-sm">วัน เดือน ปี เวลา</p>
                     </div>
-                    <button className="bg-green-100 px-4 py-2 rounded-2xl hover:bg-green-800 transition-colors">
+                    <button className="bg-green-100 px-4 py-2 rounded-2xl hover:bg-gray-400 transition-colors">
                         <p className="text-black">รายละเอียด</p>
                     </button>
                 </div>

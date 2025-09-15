@@ -17,12 +17,18 @@ return (
           <ArrowLeft className="w-6 h-6 mr-2" />
         </button>
         <h1 className="flex-1 text-center text-2xl font-bold text-black">
-          ประวัติการสั่งยา
+
+          เช็คสิทธ์รักษา
         </h1>
       </nav>
       <main className="p-6">
         <h1 className="text-L font-bold mb-4 text-green-700">สถานะสิทธ์ล่าสุด :</h1>
         <div className="bg-white rounded-xl shadow p-4">
+        </div>
+        <h1 className="text-L font-bold my-4 text-green-700">ประวัติการเช็คสิทธ์ :</h1>
+
+        <div className="bg-white rounded-xl shadow p-4">
+
         </div>
       </main>
     </div>
