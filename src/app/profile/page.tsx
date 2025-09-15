@@ -10,7 +10,7 @@ interface Profile {
   lastName: string;
   gender: string;
   phone: string;
-  age: number;
+  age: number | null;
   birthDate: string;
   bloodType: string;
   citizenId: string;

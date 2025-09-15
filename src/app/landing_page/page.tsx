@@ -13,7 +13,7 @@ interface Profile {
     bloodType: string;
     citizenId: string;
     hospitalId: string;
-    age: number;
+    age: number | null;
 }
 
 export default function LandingPage() {
@@ -57,26 +57,29 @@ export default function LandingPage() {
                 )}
             </nav>
 
+            <h1 className="text-black text-center text-3xl font-semibold my-6">ยินดีต้อนรับสู่ระบบนัดหมอ</h1>
             <div className="my-6 text-gray-700">
-                <p className="text-black text-lg font-semibold mb-4">เมนู</p>
+                <p className="text-black text-lg font-medium mb-4">เมนู :</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-105 transition-transform">
+                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 transition-transform">
                     จองคิว
                 </div>
-                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-105 transition-transform">
-                    ประวัติการรักษา
+                <div 
+                 onClick={() => router.push("/landing_page/history_app")}
+                 className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 transition-transform">
+                    ประวัติการนัดหมอ
                 </div>
-                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-105 transition-transform">
+                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 transition-transform">
                     ประวัติการสั่งยา
                 </div>
-                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-105 transition-transform">
+                <div className="bg-[#AFFFD5] text-black p-6 rounded-3xl text-center shadow-md cursor-pointer hover:scale-95 transition-transform">
                     เช็คสิทธ์รักษา
                 </div>
             </div>
 
-            <h2 className="text-black text-lg font-semibold mb-4">นัดหมายที่จะมาถึง</h2>
+            <h2 className="text-black text-lg font-medium mb-4">นัดหมายที่จะมาถึง :</h2>
 
             <div className="space-y-4">
                 <div className="bg-[#AFFFD5] text-white p-4 rounded-3xl flex justify-between items-center shadow-md">
