@@ -93,7 +93,7 @@ export default function LandingPage() {
                         <p className="text-black font-semibold">ชื่อ นามสกุล</p>
                         <p className="text-black text-sm">วัน เดือน ปี เวลา</p>
                     </div>
-                    <button className="bg-green-100 px-4 py-2 rounded-2xl hover:bg-gray-400 transition-colors">
+                    <button className="bg-green-100 px-4 py-2 rounded-2xl hover:bg-green-300 transition-colors">
                         <p className="text-black">รายละเอียด</p>
                     </button>
                 </div>
@@ -102,7 +102,7 @@ export default function LandingPage() {
                         <p className="text-black font-semibold">ชื่อ นามสกุล</p>
                         <p className="text-black text-sm">วัน เดือน ปี เวลา</p>
                     </div>
-                    <button className="bg-green-100 px-4 py-2 rounded-2xl hover:bg-gray-400 transition-colors">
+                    <button className="bg-green-100 px-4 py-2 rounded-2xl hover:bg-green-300  transition-colors">
                         <p className="text-black">รายละเอียด</p>
                     </button>
                 </div>
