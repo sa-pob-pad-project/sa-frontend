@@ -42,7 +42,7 @@ return (
             ประวัติการนัดพบแพทย์
           </button>
           <button
-            onClick={() => router.push("/buy_drug")}
+            onClick={() => router.push("/landing_page/book_app/buy_drug")}
             className="w-full bg-green-600 text-white py-3 rounded-2xl hover:bg-green-700 transition-colors"
           >
             สั่งยา

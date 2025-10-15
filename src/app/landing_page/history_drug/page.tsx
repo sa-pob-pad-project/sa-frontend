@@ -21,7 +21,7 @@ return (
         </h1>
       </nav>
       <main className="p-6">
-        <h1 className="text-L font-bold mb-4 text-green-700">สถานะสิทธ์ล่าสุด :</h1>
+        <h1 className="text-L font-bold mb-4 text-green-700">ประวัติการสั่งยาล่าสุด :</h1>
         <div className="bg-white rounded-xl shadow p-4">
         </div>
       </main>
