@@ -1,63 +1,56 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Menu, X, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 
 export default function CheckRightsPage() {
   const router = useRouter();
-return (
-  <div className="min-h-screen bg-white">
-      
-      <nav className="bg-[#AFFFD5] text-black px-6 py-4 flex justify-between items-center shadow-md">
+
+  const rights = [
+    { name: "สิทธิ์ สปสช", img: "/images/สปสช.png", alt: "สปสช Logo" },
+    { name: "สิทธิ์ ประกันสังคม", img: "/images/ประกันสังคม.png", alt: "ประกันสังคม Logo" },
+    { name: "สิทธิ์ ข้าราชการ", img: "/images/ข้าราชการ.png", alt: "ข้าราชการ Logo" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Navbar */}
+      <nav className="bg-[#AFFFD5] text-black px-4 sm:px-6 py-4 flex items-center shadow-md">
         <button
           onClick={() => router.push("/landing_page")}
-          className="flex items-center text-black hover:scale-105 transition-transform"   
+          className="flex items-center text-black hover:scale-105 transition-transform"
         >
           <ArrowLeft className="w-6 h-6 mr-2" />
         </button>
-        <h1 className="flex-1 text-center text-2xl font-bold text-black">
-
-          เช็คสิทธ์รักษา
+        <h1 className="flex-1 text-center text-xl sm:text-2xl font-bold text-black">
+          เช็คสิทธิ์รักษา
         </h1>
       </nav>
-      <main className="p-6 items-center text-center">
-        <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-[#AFFFD5] rounded-4xl  items-center text-center shadow p-15 mt-6">
-          <Image
-            src="/images/สปสช.png"  
-            alt="สปสช Logo"
-            width={128}
-            height={128}
-            className="object-contain w-full h-full rounded-xl"
-          />
-          <h1 className="text-2xl font-medium mb-4 text-black mt-4">สิทธิ์ สปสช</h1>
-        </div>
-        <div className="bg-[#AFFFD5] rounded-4xl  items-center text-center shadow p-15 mt-6">
-          <Image
-            src="/images/ประกันสังคม.png"  
-            alt="ประกันสังคม Logo"
-            width={128}
-            height={128}
-            className="object-contain w-full h-full rounded-xl"
-          />
-          <h1 className="text-2xl font-medium mb-4 text-black mt-4">สิทธิ์ ประกันสังคม</h1>
-        </div>
 
-        <div className="bg-[#AFFFD5] rounded-4xl  items-center text-center shadow p-15 mt-6">
-            <Image
-            src="/images/ข้าราชการ.png"  
-            alt="ข้าราชการ Logo"
-            width={128}
-            height={128}
-            className="object-contain w-full h-full rounded-xl"
-          />
-          <h1 className="text-2xl font-medium mb-4 text-black mt-4">สิทธิ์ ข้าราชการ</h1>
-        </div>
+      {/* Main Content */}
+      <main className="flex-1 p-6 flex justify-center items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+          {rights.map((item, index) => (
+            <div
+              key={index}
+              className="bg-[#AFFFD5] rounded-2xl shadow-lg p-6 flex flex-col items-center hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+            >
+              <div className="w-28 h-28 sm:w-32 sm:h-32 mb-4 relative">
+                <Image
+                  src={item.img}
+                  alt={item.alt}
+                  fill
+                  className="object-contain rounded-xl"
+                />
+              </div>
+              <h2 className="text-lg sm:text-xl font-semibold text-black">
+                {item.name}
+              </h2>
+            </div>
+          ))}
         </div>
       </main>
     </div>
-  
-);
+  );
 }
