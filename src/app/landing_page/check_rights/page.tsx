@@ -15,7 +15,7 @@ export default function CheckRightsPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Navbar */}
+      
       <nav className="bg-[#AFFFD5] text-black px-4 sm:px-6 py-4 flex items-center shadow-md">
         <button
           onClick={() => router.push("/landing_page")}
