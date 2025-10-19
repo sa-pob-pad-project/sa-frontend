@@ -1,128 +1,177 @@
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, MoreHorizontal } from "lucide-react";
+import {
+  PatientAppointment,
+  HistoryAppointment,
+} from "@/services/appointmentService";
+
+type AppointmentData = {
+  doctor_first_name: string;
+  doctor_last_name: string;
+  doctor_id: string;
+  specialty: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+};
+
 export default function AppointmentsPage() {
   const [reminderOn, setReminderOn] = useState(true);
+  const [latest, setLatest] = useState<AppointmentData | null>(null);
+  const [pastAppointments, setPastAppointments] = useState<AppointmentData[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        // ดึงนัดล่าสุด
+        const latestRes = await PatientAppointment();
+        setLatest(latestRes.data);
+
+        // ดึงประวัติทั้งหมด
+        const historyRes = await HistoryAppointment();
+        setPastAppointments(historyRes.data || []);
+      } catch (err) {
+        console.error("Error fetching appointments:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        กำลังโหลดข้อมูล...
+      </div>
+    );
+  }
+
   return (
-      <div className="min-h-screen bg-[#AFFFD5]">
-      <nav className="bg-white text-black px-6 py-4 flex justify-between items-center shadow-md">
+    <div className="min-h-screen bg-[#AFFFD5] flex flex-col">
+      {/* Navbar */}
+      <nav className="bg-white text-black px-4 py-3 flex items-center shadow-md sticky top-0 z-10">
         <button
           onClick={() => router.push("/landing_page")}
-          className="flex items-center text-black hover:scale-105 transition-transform"   
+          className="p-2 rounded-full hover:bg-gray-100 transition"
         >
-          <ArrowLeft className="w-6 h-6 mr-2" />
+          <ArrowLeft className="w-6 h-6 text-gray-800" />
         </button>
-        <h1 className="flex-1 text-center text-2xl font-semibold text-black">
-          ประวัติการนัดพบแพทย์ครั้งล่าสุด
+        <h1 className="flex-1 text-center text-xl sm:text-2xl font-semibold text-gray-800">
+          ประวัติการนัดพบแพทย์
         </h1>
       </nav>
-    <main className="p-6">
-    
-      <section className="mb-8">
-        <h1 className="text-L font-bold mb-4 text-green-700">สถานะล่าสุด :</h1>
 
-        <article className="bg-white rounded-2xl p-4 shadow-sm overflow-hidden">
-          <div className="bg-emerald-500 rounded-xl p-4 text-white flex flex-col md:flex-row md:items-center md:justify-between">
+      <main className="flex-1 p-6 space-y-10">
+        {/* นัดล่าสุด */}
+        <section>
+          <h2 className="text-lg font-bold mb-3 text-green-700">
+            สถานะล่าสุด :
+          </h2>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12A9 9 0 1112 3a9 9 0 019 9z" />
-                </svg>
-                <div className="text-sm leading-tight">
-                  <div className="text-xs opacity-90">เวลานัดหมอ :</div>
-                  <div className="font-medium">วันที่ 13 สิงหาคม , 10.00 - 10.30 น.</div>
+          {latest ? (
+            <article className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-emerald-500 p-4 text-white flex flex-col md:flex-row md:items-center md:justify-between rounded-t-2xl">
+                <div>
+                  <p className="text-xs opacity-80">เวลานัดหมอ :</p>
+                  <p className="font-medium">
+                    {latest.start_time} - {latest.end_time}
+                  </p>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-3 md:mt-0 text-sm opacity-90">&nbsp;</div>
-          </div>
-
-          <div className="flex items-center gap-4 p-4 -mt-6">
-            <div className="flex-1">
-              <h1 className="text-xs text-gray-600 mt-1">ชื่อ : นพ.เก่ง เกิน</h1>
-              <p className="text-xs text-gray-600 mt-1">แผนก : หมอแผนกทั่วไป</p>
-              <p className="text-xs text-gray-600 truncate mt-1">สังกัด : โรงพยาบาลวิควะคอมเกษต...</p>
-            </div>
-            <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-200">
-        
-            </div>
-          </div>
-
-          <div className="flex gap-3 mt-1 p-4">
-            <button
-              onClick={() => setReminderOn(!reminderOn)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-full border border-emerald-600 bg-emerald-50 text-emerald-800 font-medium"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              แจ้งเตือนฉัน
-            </button>
-
-            <button className="py-2 px-4 rounded-full bg-red-600 text-white font-medium">ยกเลิกนัด</button>
-
-            <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12h.01M12 12h.01M18 12h.01" />
-              </svg>
-            </button>
-          </div>
-        </article>
-      </section>
-
-      <section>
-        <h1 className="text-L font-bold mb-4 text-green-700">ประวัติการนัดหมอที่ผ่านมา :</h1>
-
-        <ul className="space-y-4">
-          <li>
-            <div className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-              <div className="w-16 h-16 rounded-full overflow-hidden border">
+              <div className="flex items-center gap-4 p-4">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-700">
+                    ชื่อ : นพ.{latest.doctor_first_name} {latest.doctor_last_name}
+                  </p>
+                  <p className="text-sm text-gray-700 mt-1">
+                    แผนก : {latest.specialty}
+                  </p>
+                  <p className="text-sm text-gray-700 truncate mt-1">
+                    สถานะ : {latest.status}
+                  </p>
+                </div>
+                <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                  No Image
+                </div>
               </div>
 
-              <div className="flex-1 text-sm">
-                <div className="font-medium">ชื่อ : Dr.John wick</div>
-                <div className="text-xs text-gray-600 mt-1">แผนก : หมอกระดูก</div>
-                <div className="text-xs text-gray-600 truncate">สังกัด : โรงพยาบาลวิควะคอ...</div>
+              <div className="flex gap-3 px-4 pb-4">
+                <button
+                  onClick={() => setReminderOn(!reminderOn)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full font-medium transition ${
+                    reminderOn
+                      ? "bg-emerald-500 text-white"
+                      : "bg-emerald-50 text-emerald-800 border border-emerald-600"
+                  }`}
+                >
+                  {reminderOn ? (
+                    <Bell className="w-5 h-5" />
+                  ) : (
+                    <BellOff className="w-5 h-5" />
+                  )}
+                  {reminderOn ? "แจ้งเตือนเปิดอยู่" : "เปิดการแจ้งเตือน"}
+                </button>
+
+                <button className="py-2 px-4 rounded-full bg-red-600 text-white font-medium hover:bg-red-700 transition">
+                  ยกเลิกนัด
+                </button>
+
+                <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">
+                  <MoreHorizontal className="w-5 h-5 text-gray-600" />
+                </button>
               </div>
+            </article>
+          ) : (
+            <p className="text-gray-600">ไม่มีประวัติการนัดล่าสุด</p>
+          )}
+        </section>
 
-              <button className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12h.01M12 12h.01M18 12h.01" />
-                </svg>
-              </button>
-            </div>
-          </li>
+        {/* ประวัติการนัดที่ผ่านมา */}
+        <section>
+          <h2 className="text-lg font-bold mb-3 text-green-700">
+            ประวัติการนัดที่ผ่านมา :
+          </h2>
 
-          {/* duplicate item as example */}
-          <li>
-            <div className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-              <div className="w-16 h-16 rounded-full overflow-hidden border">
-              </div>
-
-              <div className="flex-1 text-sm">
-                <div className="font-medium">ชื่อ : พญ.เมตตา ใจดี</div>
-                <div className="text-xs text-gray-600 mt-1">แผนก : สูติ-นรีเวช</div>
-                <div className="text-xs text-gray-600 truncate">สังกัด : โรงพยาบาลเอกชน...</div>
-              </div>
-
-              <button className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12h.01M12 12h.01M18 12h.01" />
-                </svg>
-              </button>
-            </div>
-          </li>
-        </ul>
-      </section>
-    </main>
-     </div>
+          {pastAppointments.length > 0 ? (
+            <ul className="space-y-4">
+              {pastAppointments.map((item, index) => (
+                <li
+                  key={index}
+                  className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition"
+                >
+                  <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                    No Img
+                  </div>
+                  <div className="flex-1 text-sm">
+                    <p className="font-medium">
+                      นพ.{item.doctor_first_name} {item.doctor_last_name}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      แผนก : {item.specialty}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      เวลา : {item.start_time} - {item.end_time}
+                    </p>
+                  </div>
+                  <button className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">
+                    <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600">ไม่มีประวัติการนัดที่ผ่านมา</p>
+          )}
+        </section>
+      </main>
+    </div>
   );
 }

@@ -2,7 +2,7 @@ import { http } from "@/libs/http";
 import { ObjectUtils } from "@/libs/objectUtils";
 
 export const API_BASE_URL =
-    process.env.NEXT_PUBLIC_APPOINTMENT_URL || "http://localhost:8001/api";
+    process.env.NEXT_PUBLIC_APPOINTMENT_URL || "http://localhost:5000";
 
 
 export async function AppointmentSlots(doctor_id) {
@@ -51,7 +51,7 @@ export async function HistoryAppointment() {
     else throw new Error(data.error || `Unexpected status: ${res.status}`);
 }
 
-export async function ImcomingAppointment() {
+export async function IncomingAppointment() {
     const res = await http.get("//api/appointment/v1/patient/incoming");
     const data = res.data;
     if (res.status === 200) return data;
