@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState  , useEffect } from "react";
-import { Menu, X, ArrowLeft } from "lucide-react";
-import {  Bell, BellOff, MoreHorizontal } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import {  MoreHorizontal } from "lucide-react";
 import { LastestAppointment } from "@/services/appointmentService";
 
 type LastestAppointmentData = {
@@ -61,6 +61,7 @@ return (
         </h1>
       </nav>
       <main className="p-6">
+
         <h1 className="text-L font-bold mb-4 text-green-700">
           การสั่งยาครั้งล่าสุด :</h1>
         <div className="bg-white rounded-xl shadow p-20">
