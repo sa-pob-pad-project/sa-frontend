@@ -1,7 +1,8 @@
 import axios from "axios";
 
-export const userApi = axios.create({
-    baseURL: process.env.BASE_URL || "http://localhost:8000/api",
+
+export const http = axios.create({
+    baseURL: process.env.BASE_URL || "http://localhost:5000/api",
     withCredentials: true,
 });
 
