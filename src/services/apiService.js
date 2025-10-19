@@ -59,3 +59,42 @@ function calculateAge(birthDate) {
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
     return age;
 }
+
+export async function GetID(patient_data) {
+    const res = await http.post("/api/user/v1/patients", patient_data);
+    const data = res.data;
+    if (res.status === 200) return data;
+    else if (res.status === 404) throw new Error(data.error || "PAtient Not Found");
+    else if (res.status === 500) throw new Error(data.error || "Failed to get patient profiles");
+    else throw new Error(data.error || `Unexpected status: ${res.status}`);
+}
+
+export async function UpdateProfile(
+    address,
+    allergies,
+    birth_date,
+    blood_type,  
+    emergency_contact,
+    first_name,
+    id_card_number,
+    last_name,
+    phone_number) 
+    {
+    const res = await http.put("/api/user/v1/patient/me", {
+        address,
+        allergies,
+        birth_date,
+        blood_type,  
+        emergency_contact,
+        first_name,
+        id_card_number,
+        last_name,
+        phone_number,
+    });
+    const data = res.data;
+    if (res.status === 200) return data;
+    else if (res.status === 400) throw new Error(data.error || "Invalid request body or user not found");
+    else if (res.status === 401) throw new Error(data.error || "Unauthorized - Invalid or missing token");
+    else if (res.status === 500) throw new Error(data.error || "Failed to update user profile");
+    else throw new Error(data.error || `Unexpected status: ${res.status}`); 
+}
