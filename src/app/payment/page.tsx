@@ -6,11 +6,9 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ArrowLeft, CreditCard, Smartphone, Building2 } from "lucide-react"
+import { ArrowLeft, CreditCard, Smartphone } from "lucide-react"
 import { useRouter } from "next/navigation"
-
-const API_PAYMENT_INFO = "http://localhost:8003/api/payment/v1/info"
-const API_PAYMENT_ATTEMPT = "http://localhost:8003/api/payment/v1/attempt"
+import { createPaymentAttempt, createPaymentInfo } from "@/services/apiPaymentService"
 
 type PaymentMethod = "credit_card" | "promptpay"
 
@@ -23,6 +21,19 @@ interface CreditCardDetails {
 
 interface PromptPayDetails {
   phone_number: string
+}
+
+const encodeDetails = (details: CreditCardDetails | PromptPayDetails | Record<string, never>) => {
+  if (typeof window === "undefined" || typeof window.btoa !== "function") {
+    throw new Error("Base64 encoder is not available in the current environment.")
+  }
+
+  const json = JSON.stringify(details)
+  const ascii = encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, hex) =>
+    String.fromCharCode(parseInt(hex, 16))
+  )
+
+  return window.btoa(ascii)
 }
 
 export default function PaymentPage() {
@@ -76,25 +87,27 @@ export default function PaymentPage() {
         }
       }
 
-      const response = await fetch(API_PAYMENT_INFO, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          payment_method: paymentMethod,
-          details: details,
-        }),
+      const encodedDetails = encodeDetails(details)
+      const paymentInfoResponse = await createPaymentInfo({
+        payment_method: paymentMethod,
+        details: encodedDetails,
       })
 
-      if (!response.ok) {
-        throw new Error("การชำระเงินล้มเหลว")
+      const paymentInfoId = paymentInfoResponse?.payment_info?.id
+      if (!paymentInfoId) {
+        throw new Error("ไม่พบข้อมูลการชำระเงินที่สร้าง")
       }
 
-      const data = await response.json()
-      console.log("[v0] Payment response:", data)
+      const orderId = "" // TODO: เชื่อม order_id จาก flow ของ order จริง
+      if (!orderId) {
+        console.warn("[payment] Missing order ID. Skipping createPaymentAttempt.")
+      } else {
+        await createPaymentAttempt({
+          order_id: orderId,
+          payment_info_id: paymentInfoId,
+        })
+      }
 
-      // Handle successful payment
       alert("ชำระเงินสำเร็จ!")
     } catch (err) {
       console.error("[v0] Payment error:", err)
