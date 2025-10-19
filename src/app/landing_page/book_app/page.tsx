@@ -1,11 +1,52 @@
 ﻿"use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState  , useEffect } from "react";
 import { Menu, X, ArrowLeft } from "lucide-react";
+import {  Bell, BellOff, MoreHorizontal } from "lucide-react";
+import { LastestAppointment } from "@/services/appointmentService";
+
+type LastestAppointmentData = {
+  doctor_first_name: string;
+  doctor_last_name: string;
+  doctor_id: string;
+  specialty: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+};
+
 
 export default function CheckRightsPage() {
   const router = useRouter();
+
+  const [reminderOn, setReminderOn] = useState(true);
+  const [latest, setLatest] = useState<LastestAppointmentData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const latestRes = await LastestAppointment();
+        setLatest(latestRes);
+
+      } catch (err: any) {
+        console.error(err);
+        setError("ไม่สามารถโหลดข้อมูลการนัดหมายได้");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
+
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleString("th-TH");
+
 return (
   <div className="min-h-screen bg-[#AFFFD5]">
       <nav className="bg-white text-black px-6 py-4 flex justify-between items-center shadow-md">
@@ -24,10 +65,37 @@ return (
           การสั่งยาครั้งล่าสุด :</h1>
         <div className="bg-white rounded-xl shadow p-20">
         </div>
-        <h1 className="text-L font-bold mb-4 mt-8 text-green-700">
-          การพบแพทย์ครั้งล่าสุด :</h1>
-        <div className="bg-white rounded-xl shadow p-20">
-        </div>
+
+
+         <section>
+          <h2 className="text-lg font-bold mb-3 text-green-700">ประวัติการนัดที่ผ่านมา :</h2>
+          <ul className="space-y-4">  
+            {latest ?  (
+              <li
+                className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition"
+              >
+                <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                  No Img
+                </div>
+                <div className="flex-1 text-sm">
+                  <p className="font-medium">
+                    นพ.{latest.doctor_first_name} {latest.doctor_last_name}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">แผนก : {latest.specialty}</p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    เวลา : {formatDate(latest.start_time)} - {formatDate(latest.end_time)}
+                  </p>
+                </div>
+                <button className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">
+                  <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                </button>
+              </li>
+              
+            ) : (<p className="text-gray-600">ไม่มีประวัติการนัดที่ผ่านมา</p>
+            )
+      }</ul>
+      </section>
+      
        <div className="mt-4 flex flex-col w-full space-y-2">
           <button
             onClick={() => router.push("/landing_page/book_app/booking")}

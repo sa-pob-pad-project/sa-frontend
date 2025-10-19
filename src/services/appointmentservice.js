@@ -16,8 +16,8 @@ export async function AppointmentSlots(doctor_id) {
     else throw new Error(data.error || `Unexpected status: ${res.status}`);
 }
     
-export async function PatientAppointment() {
-    const res = await http.get("/api/appointment/v1/history/latest");
+export async function LastestAppointment() {
+    const res = await http.get("/api/appointment/v1/patient/history/latest");
     const data = res.data;
     if (res.status === 200) return data;
     else if (res.status === 204) throw new Error(data.error || "No appointments found");
@@ -42,7 +42,7 @@ export async function BookAppointment(doctor_id, start_time) {
 } 
 
 export async function HistoryAppointment() {
-    const res = await http.get("/api/appointment/v1/patient");
+    const res = await http.get("/api/appointment/v1/patient/history");
     const data = res.data;
     if (res.status === 200) return data;
     else if (res.status === 204) throw new Error(data.error || "No appointments found");

@@ -2,10 +2,10 @@ import { http } from "@/libs/http";
 import { ObjectUtils } from "@/libs/objectUtils";
 
 export const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 export async function loginPatient({ hospital_id, password }) {
-    const res = await http.post("/user/v1/patient/login", {
+    const res = await http.post("/api/user/v1/patient/login", {
         hospital_id,
         password,
     });
@@ -22,7 +22,7 @@ export async function loginPatient({ hospital_id, password }) {
 export async function registerPatient(formData) {
   formData.birth_date = new Date(formData.birth_date);
   console.log(formData);
-    const res = await http.post("/user/v1/patient/register", formData);
+    const res = await http.post("/api/user/v1/patient/register", formData);
     const data = res.data;
 
     if (res.status === 201) return data;
@@ -32,7 +32,7 @@ export async function registerPatient(formData) {
 }
 
 export async function getProfile() {
-    const res = await http.get(`/user/v1/patient/me`);
+    const res = await http.get("/api/user/v1/patient/me");
     const data = await res.data;
 
     if (res.status === 401) throw new Error("Unauthorized. Please login again.");

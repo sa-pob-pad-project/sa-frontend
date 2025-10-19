@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, BellOff, MoreHorizontal } from "lucide-react";
-import {
-  PatientAppointment,
-  HistoryAppointment,
-} from "@/services/appointmentService";
+import { LastestAppointment, HistoryAppointment } from "@/services/appointmentService";
 
 type AppointmentData = {
   doctor_first_name: string;
@@ -23,20 +20,24 @@ export default function AppointmentsPage() {
   const [latest, setLatest] = useState<AppointmentData | null>(null);
   const [pastAppointments, setPastAppointments] = useState<AppointmentData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        // ดึงนัดล่าสุด
-        const latestRes = await PatientAppointment();
-        setLatest(latestRes.data);
+        setLoading(true);
+        setError(null);
 
-        // ดึงประวัติทั้งหมด
+        const latestRes = await LastestAppointment();
+        setLatest(latestRes);
+
         const historyRes = await HistoryAppointment();
-        setPastAppointments(historyRes.data || []);
-      } catch (err) {
-        console.error("Error fetching appointments:", err);
+        setPastAppointments(historyRes || []);
+      } catch (err: any) {
+        console.error(err);
+        setError("ไม่สามารถโหลดข้อมูลการนัดหมายได้");
       } finally {
         setLoading(false);
       }
@@ -52,6 +53,16 @@ export default function AppointmentsPage() {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-600">
+        {error}
+      </div>
+    );
+  }
+
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleString("th-TH");
 
   return (
     <div className="min-h-screen bg-[#AFFFD5] flex flex-col">
@@ -71,9 +82,7 @@ export default function AppointmentsPage() {
       <main className="flex-1 p-6 space-y-10">
         {/* นัดล่าสุด */}
         <section>
-          <h2 className="text-lg font-bold mb-3 text-green-700">
-            สถานะล่าสุด :
-          </h2>
+          <h2 className="text-lg font-bold mb-3 text-green-700">สถานะล่าสุด :</h2>
 
           {latest ? (
             <article className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -81,7 +90,7 @@ export default function AppointmentsPage() {
                 <div>
                   <p className="text-xs opacity-80">เวลานัดหมอ :</p>
                   <p className="font-medium">
-                    {latest.start_time} - {latest.end_time}
+                    {formatDate(latest.start_time)} - {formatDate(latest.end_time)}
                   </p>
                 </div>
               </div>
@@ -91,12 +100,8 @@ export default function AppointmentsPage() {
                   <p className="text-sm text-gray-700">
                     ชื่อ : นพ.{latest.doctor_first_name} {latest.doctor_last_name}
                   </p>
-                  <p className="text-sm text-gray-700 mt-1">
-                    แผนก : {latest.specialty}
-                  </p>
-                  <p className="text-sm text-gray-700 truncate mt-1">
-                    สถานะ : {latest.status}
-                  </p>
+                  <p className="text-sm text-gray-700 mt-1">แผนก : {latest.specialty}</p>
+                  <p className="text-sm text-gray-700 truncate mt-1">สถานะ : {latest.status}</p>
                 </div>
                 <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
                   No Image
@@ -112,11 +117,7 @@ export default function AppointmentsPage() {
                       : "bg-emerald-50 text-emerald-800 border border-emerald-600"
                   }`}
                 >
-                  {reminderOn ? (
-                    <Bell className="w-5 h-5" />
-                  ) : (
-                    <BellOff className="w-5 h-5" />
-                  )}
+                  {reminderOn ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
                   {reminderOn ? "แจ้งเตือนเปิดอยู่" : "เปิดการแจ้งเตือน"}
                 </button>
 
@@ -136,9 +137,7 @@ export default function AppointmentsPage() {
 
         {/* ประวัติการนัดที่ผ่านมา */}
         <section>
-          <h2 className="text-lg font-bold mb-3 text-green-700">
-            ประวัติการนัดที่ผ่านมา :
-          </h2>
+          <h2 className="text-lg font-bold mb-3 text-green-700">ประวัติการนัดที่ผ่านมา :</h2>
 
           {pastAppointments.length > 0 ? (
             <ul className="space-y-4">
@@ -154,11 +153,9 @@ export default function AppointmentsPage() {
                     <p className="font-medium">
                       นพ.{item.doctor_first_name} {item.doctor_last_name}
                     </p>
+                    <p className="text-xs text-gray-600 mt-1">แผนก : {item.specialty}</p>
                     <p className="text-xs text-gray-600 mt-1">
-                      แผนก : {item.specialty}
-                    </p>
-                    <p className="text-xs text-gray-600 mt-1">
-                      เวลา : {item.start_time} - {item.end_time}
+                      เวลา : {formatDate(item.start_time)} - {formatDate(item.end_time)}
                     </p>
                   </div>
                   <button className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">
