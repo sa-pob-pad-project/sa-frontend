@@ -5,6 +5,27 @@ import { useState  , useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import {  MoreHorizontal } from "lucide-react";
 import { LastestAppointment } from "@/services/appointmentService";
+import { latestOrder } from "@/services/apiService";
+
+type LatestOrderData =  {
+  "delivery_at": "string",
+  "delivery_status": "string",
+  "doctor_id": "string",
+  "note": "string",
+  "order_id": "string",
+  "order_items": [
+    {
+      "medicine_id": "string",
+      "medicine_name": "string",
+      "quantity": 0
+    }
+  ],
+  "patient_id": "string",
+  "reviewed_at": "string",
+  "status": "string",
+  "submitted_at": "string",
+  "total_amount": 0
+}
 
 type LastestAppointmentData = {
   doctor_first_name: string;

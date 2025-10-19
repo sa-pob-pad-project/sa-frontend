@@ -98,3 +98,14 @@ export async function UpdateProfile(
     else if (res.status === 500) throw new Error(data.error || "Failed to update user profile");
     else throw new Error(data.error || `Unexpected status: ${res.status}`); 
 }
+
+
+export async function latestOrder() {
+    const res = await http.get("/api/order/v1/orders/latest");
+    const data = res.data;
+    if (res.status === 200) return data;
+    else if (res.status === 401) throw new Error(data.error || "Unauthorized");
+    else if (res.status === 404) throw new Error(data.error || "No orders found");
+    else if (res.status === 500) throw new Error(data.error || "Failed to retrieve order");
+    else throw new Error(data.error || `Unexpected status: ${res.status}`); 
+}
