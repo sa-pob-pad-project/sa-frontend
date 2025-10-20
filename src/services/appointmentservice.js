@@ -52,7 +52,7 @@ export async function HistoryAppointment() {
 }
 
 export async function IncomingAppointment() {
-    const res = await http.get("//api/appointment/v1/patient/incoming");
+    const res = await http.get("/api/appointment/v1/patient/incoming");
     const data = res.data;
     if (res.status === 200) return data;
     else if (res.status === 401) throw new Error(data.error || "Unauthorized");
