@@ -203,7 +203,7 @@ export function ShippingStep() {
         setShipping({ deliveryInfoId })
       }
 
-      console.log("[order-flow] oder ID:", orderId)
+      // console.log("[order-flow] oder ID:", orderId)
       if (!orderId) {
         const orderResponse = await createOrder({
           note: orderNote ?? shipping.note ?? "",

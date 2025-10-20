@@ -33,7 +33,7 @@ export async function createPaymentAttempt(payload) {
     try {
         const res = await http.post(PAYMENT_ATTEMPT_ENDPOINT, payload);
 
-        if (res.status === 201) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
     } catch (error) {
@@ -48,7 +48,7 @@ export async function updatePaymentAttempt(attemptId, payload = {}) {
             payment_attempt_id: attemptId,
         });
 
-        if (res.status === 200) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
     } catch (error) {
@@ -60,7 +60,7 @@ export async function getPaymentAttemptById(attemptId) {
     try {
         const res = await http.get(`${PAYMENT_ATTEMPT_ENDPOINT}/${attemptId}`);
 
-        if (res.status === 200) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
     } catch (error) {
@@ -74,7 +74,7 @@ export async function getPaymentAttemptByOrderId(orderId) {
             params: { order_id: orderId },
         });
 
-        if (res.status === 200) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
     } catch (error) {
@@ -86,7 +86,7 @@ export async function createPaymentInfo(payload) {
     try {
         const res = await http.post(PAYMENT_INFO_ENDPOINT, payload);
 
-        if (res.status === 201) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
     } catch (error) {
@@ -94,11 +94,25 @@ export async function createPaymentInfo(payload) {
     }
 }
 
+export async function getPaymentInfoByMethod(method) {
+    try {
+        const res = await http.get(`${PAYMENT_INFO_ENDPOINT}/method`, {
+            params: { method },
+        });
+
+        if (res.status === 201 || res.status === 200) return res.data
+
+        throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
+    } catch (error) {
+        handlePaymentError(error, "Failed to fetch payment information by method");
+    }
+}
+
 export async function getPaymentInfoById(paymentInfoId) {
     try {
         const res = await http.get(`${PAYMENT_INFO_ENDPOINT}/${paymentInfoId}`);
 
-        if (res.status === 200) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
     } catch (error) {
@@ -110,7 +124,7 @@ export async function getAllPaymentInfos() {
     try {
         const res = await http.get(PAYMENT_INFO_ENDPOINT);
 
-        if (res.status === 200) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
     } catch (error) {
@@ -122,7 +136,7 @@ export async function updatePaymentInfo(payload) {
     try {
         const res = await http.put(PAYMENT_INFO_ENDPOINT, payload);
 
-        if (res.status === 200) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
     } catch (error) {
@@ -136,7 +150,7 @@ export async function deletePaymentInfo(paymentInfoId) {
             data: { id: paymentInfoId },
         });
 
-        if (res.status === 200) return res.data;
+        if (res.status === 201 || res.status === 200) return res.data
         if (res.status === 204) return res.data;
 
         throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
