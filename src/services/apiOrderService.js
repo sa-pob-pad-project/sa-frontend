@@ -1,82 +1,81 @@
+﻿
+import { http } from "@/libs/http"
 
-import { http } from "@/libs/http";
+const ORDER_ENDPOINT = "/order/v1/orders"
+const DELIVERY_INFO_ENDPOINT = "/delivery-info/v1"
+
+function extractErrorMessage(error, fallback) {
+  const response = error?.response
+  if (response?.data?.error) {
+    return response.data.error
+  }
+  return fallback
+}
 
 export async function createOrder(payload) {
-    try {
-        const res = await http.post("/order/v1/orders", payload);
-        if (res.status === 201 || res.status === 200) return res.data;
+  try {
+    const res = await http.post(ORDER_ENDPOINT, payload)
+    if (res.status === 201 || res.status === 200) return res.data
 
-        throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
-    } catch (error) {
-        const response = error?.response;
-        if (response?.data?.error) {
-            throw new Error(response.data.error);
-        }
-        throw new Error("Failed to create order");
-    }
+    throw new Error(res.data?.error || `Unexpected status: ${res.status}`)
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to create order"))
+  }
 }
 
-// request payload example
-// {
-//     "address": "You home",
-//     "phone_number": "12045674",
-//     "delivery_method": "flash"
-// }
 export async function createDeliveryInfo(payload) {
-    try {
-        const res = await http.post("/delivery-info/v1/", payload);
+  try {
+    const res = await http.post(DELIVERY_INFO_ENDPOINT, payload)
 
-        if (res.status === 201 || res.status === 200) {
-            return res.data;
-        }
-
-        throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
-    } catch (error) {
-        const response = error?.response;
-        if (response?.data?.error) {
-            throw new Error(response.data.error);
-        }
-        throw new Error("Failed to create delivery info");
+    if (res.status === 201 || res.status === 200) {
+      return res.data
     }
+
+    throw new Error(res.data?.error || `Unexpected status: ${res.status}`)
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to create delivery info"))
+  }
 }
 
-// {
-//   "address": "string",
-//   "delivery_method": "flash",
-//   "id": "string",
-//   "phone_number": "string"
-// }
-export async function updateDeliveryInfo(payload) {
-    try {
-        const res = await http.put(`/delivery-info/v1/${payload.id}`, payload);
-        if (res.status === 201 || res.status === 200) {
-            return res.data;
-        }
-
-        throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
-    } catch (error) {
-        const response = error?.response;
-        if (response?.data?.error) {
-            throw new Error(response.data.error);
-        }
-        throw new Error("Failed to update delivery info");
+export async function updateDeliveryInfo(id, payload) {
+  try {
+    const res = await http.put(`${DELIVERY_INFO_ENDPOINT}/${id}`, payload)
+    if (res.status === 200 || res.status === 204) {
+      return res.data
     }
+
+    throw new Error(res.data?.error || `Unexpected status: ${res.status}`)
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to update delivery info"))
+  }
 }
 
-export async function getDeliveryInfoByMethod(method) {
+export async function getDeliveryInfo(params = {}) {
+    // console.log("getDeliveryInfo params:", params);
+    const queryParams = { ...params }
+    const deliveryMethod = queryParams.delivery_method
+
+    if (deliveryMethod) {
+        queryParams.method = deliveryMethod === "delivery" ? "flash" : deliveryMethod
+        delete queryParams.delivery_method
+    }
+
     try {
-        const res = await http.get(`/delivery-info/v1/methods?method=${method}`);
+        const res = await http.get(`${DELIVERY_INFO_ENDPOINT}/methods`, { params: queryParams })
 
-        if (res.status === 201 || res.status === 200) {
-            return res.data;
+        if (res.status === 200) {
+            return res.data
+        }
+        if (res.status === 204) {
+            return null
         }
 
-        throw new Error(res.data?.error || `Unexpected status: ${res.status}`);
+        throw new Error(res.data?.error || `Unexpected status: ${res.status}`)
     } catch (error) {
-        const response = error?.response;
-        if (response?.data?.error) {
-            throw new Error(response.data.error);
+        const status = error?.response?.status
+        if (status === 404) {
+            return null
         }
-        throw new Error("Failed to get delivery info by method");
+        throw new Error(extractErrorMessage(error, "Failed to get delivery info"))
     }
 }
