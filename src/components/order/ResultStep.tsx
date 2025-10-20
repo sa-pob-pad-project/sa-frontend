@@ -29,7 +29,7 @@ export function ResultStep() {
       (sum, item) => sum + item.price * item.quantity,
       0,
     )
-    const deliveryFee = state.shipping.method === "delivery" ? 80 : 0
+    const deliveryFee = state.shipping.method === "flash" ? 80 : 0
     return subtotal + deliveryFee
   }, [state.items, state.shipping.method])
 
@@ -40,7 +40,7 @@ export function ResultStep() {
         คำสั่งซื้อสำเร็จ
       </div>
       <p className="text-sm text-gray-600">
-        การชำระเงินเสร็จสมบูรณ์ สามารถติดตามสถานะการจัดส่งได้จากหน้านี้หรือกลับไปยังหน้าหลักได้ทุกเวลา
+        การชำระเงินเสร็จสมบูรณ์ สามารถตรวจสอบความคืบหน้าของการจัดส่งได้จากข้อมูลด้านล่าง
       </p>
 
       <Card className="rounded-3xl border-none bg-[#BFFFE3] p-6 shadow-md">
@@ -54,7 +54,7 @@ export function ResultStep() {
 
           <div className="space-y-3">
             {statusMeta.map((meta) => (
-              <div className="flex items-center justify-between" key={meta.key}>
+              <div key={meta.key} className="flex items-center justify-between">
                 <span>{meta.label}</span>
                 <span
                   className={`text-xs ${

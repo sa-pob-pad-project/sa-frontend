@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useReducer } from "react"
 
-export type DeliveryMethod = "delivery" | "pickup"
+export type DeliveryMethod = "flash" | "pick_up"
 export type PaymentMethod = "credit_card" | "promptpay"
 export type OrderFlowStepId = "shipping" | "status" | "review" | "payment" | "result"
 
@@ -56,6 +56,7 @@ export interface ShippingInfo {
   phone: string
   note?: string
   pickupLocation?: string
+  deliveryInfoId?: string
 }
 
 export interface CardPaymentDraft {
@@ -126,17 +127,17 @@ const ORDER_FLOW_STEPS: OrderFlowStepMeta[] = [
   {
     id: "shipping",
     label: "ข้อมูลการจัดส่ง",
-    description: "ระบุวิธีรับยาและข้อมูลติดต่อ",
+    description: "ระบุวิธีรับยาและกรอกข้อมูลให้ครบถ้วน",
   },
   {
     id: "status",
     label: "สถานะการสั่งยา",
-    description: "ยืนยันการดำเนินงานและไทม์ไลน์",
+    description: "ติดตามความคืบหน้าของคำสั่งซื้อ",
   },
   {
     id: "review",
     label: "ตรวจสอบรายการยา",
-    description: "เช็ครายการยาและรายละเอียดก่อนชำระเงิน",
+    description: "ตรวจสอบความถูกต้องก่อนชำระเงิน",
   },
   {
     id: "payment",
@@ -146,7 +147,7 @@ const ORDER_FLOW_STEPS: OrderFlowStepMeta[] = [
   {
     id: "result",
     label: "สรุปสถานะ",
-    description: "ตรวจสอบสถานะล่าสุดหลังชำระเงิน",
+    description: "ดูสถานะล่าสุดหลังชำระเงิน",
   },
 ]
 
@@ -154,12 +155,12 @@ const ORDER_STATUS_SEQUENCE: OrderStatusMeta[] = [
   {
     key: "APPROVED",
     label: "อนุมัติแล้ว",
-    description: "ใบสั่งยาของคุณผ่านการอนุมัติจากแพทย์เรียบร้อย",
+    description: "ใบสั่งยาผ่านการอนุมัติจากแพทย์เรียบร้อย",
   },
   {
     key: "WAITING_PAYMENT",
     label: "รอชำระเงิน",
-    description: "กรุณาชำระเงินเพื่อให้ทีมงานเริ่มเตรียมยา",
+    description: "กรุณาชำระเงินเพื่อให้เริ่มเตรียมยา",
   },
   {
     key: "PREPARING",
@@ -169,12 +170,12 @@ const ORDER_STATUS_SEQUENCE: OrderStatusMeta[] = [
   {
     key: "SHIPPING",
     label: "กำลังจัดส่ง",
-    description: "พัสดุออกจากคลังและอยู่ระหว่างการจัดส่ง",
+    description: "พัสดุออกจากคลังแล้วและอยู่ระหว่างจัดส่ง",
   },
   {
     key: "COMPLETED",
     label: "ส่งถึงแล้ว",
-    description: "คุณได้รับยาเรียบร้อยแล้ว ขอบคุณที่ใช้บริการ",
+    description: "ได้รับยาเรียบร้อยแล้ว ขอบคุณที่ใช้บริการ",
   },
 ]
 
@@ -234,10 +235,12 @@ const DEFAULT_STATE: OrderFlowState = {
   },
   items: DEFAULT_HISTORY[0]?.items ?? [],
   shipping: {
-    method: "delivery",
+    method: "flash",
     address: "",
     phone: "",
     note: "",
+    pickupLocation: "",
+    deliveryInfoId: undefined,
   },
   note: "",
   payment: {

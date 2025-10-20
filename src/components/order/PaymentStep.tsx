@@ -66,7 +66,7 @@ export function PaymentStep() {
       (sum, item) => sum + item.price * item.quantity,
       0,
     )
-    const deliveryFee = state.shipping.method === "delivery" ? 80 : 0
+    const deliveryFee = state.shipping.method === "flash" ? 80 : 0
     const total = subtotal + deliveryFee
     return { subtotal, deliveryFee, total }
   }, [state.items, state.shipping.method])

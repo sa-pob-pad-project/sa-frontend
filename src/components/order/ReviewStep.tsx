@@ -15,7 +15,7 @@ export function ReviewStep() {
       (sum, item) => sum + item.price * item.quantity,
       0,
     )
-    const deliveryFee = state.shipping.method === "delivery" ? 80 : 0
+    const deliveryFee = state.shipping.method === "flash" ? 80 : 0
     const total = subtotal + deliveryFee
     return { subtotal, deliveryFee, total }
   }, [state.items, state.shipping.method])
@@ -37,7 +37,7 @@ export function ReviewStep() {
           ตรวจสอบรายการยา
         </h2>
         <p className="mt-1 text-sm text-gray-600">
-          ตรวจสอบข้อมูลให้ถูกต้องก่อนดำเนินการชำระเงิน
+          ตรวจสอบรายการและข้อมูลเพิ่มเติมก่อนดำเนินการชำระเงิน
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export function ReviewStep() {
           <div className="mt-2 flex items-center justify-between text-sm text-gray-700">
             <span>ค่าจัดส่ง</span>
             <span>
-              {pricing.deliveryFee > 0
+              {pricing.deliveryFee
                 ? formatCurrency.format(pricing.deliveryFee)
                 : "ฟรี"}
             </span>

@@ -15,12 +15,12 @@ const STATUS_COLORS: Record<string, string> = {
   COMPLETED: "#E91E63",
 }
 
-function generateFallbackOrderId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `ORD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
-  }
-  return `ORD-${Date.now().toString(36).toUpperCase()}`
-}
+// function generateFallbackOrderId() {
+//   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+//     return `ORD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
+//   }
+//   return `ORD-${Date.now().toString(36).toUpperCase()}`
+// }
 
 export function StatusStep() {
   const router = useRouter()
@@ -33,8 +33,8 @@ export function StatusStep() {
   } = useOrderFlow()
 
   useEffect(() => {
-    if (!state.orderId) {
-      setOrderId(generateFallbackOrderId())
+    if (state.orderId) {
+      setOrderId(state.orderId)
     }
   }, [setOrderId, state.orderId])
 
@@ -61,7 +61,7 @@ export function StatusStep() {
   const now = new Date()
 
   const shippingMethodText =
-    state.shipping.method === "delivery" ? "จัดส่งถึงบ้าน" : "รับที่โรงพยาบาล"
+    state.shipping.method === "flash" ? "จัดส่งถึงบ้าน" : "รับที่โรงพยาบาล"
 
   const currentStatusMeta = statusMeta.find((meta) => meta.key === state.status)
   const statusIndex = statusMeta.findIndex((meta) => meta.key === state.status)
@@ -143,27 +143,26 @@ export function StatusStep() {
         </div>
       </Card>
 
-
       <div className="flex flex-col gap-3 md:flex-row">
         <Button
           className="order-1 rounded-full border border-[#1BC47D] bg-white text-[#1BC47D] hover:bg-[#1BC47D]/10 md:flex-[1.5]"
           onClick={() => nextStep()}
         >
-          ???????????????
+          ตรวจสอบรายการยา
         </Button>
         <Button
           variant="outline"
           className="order-2 rounded-full border-[#1BC47D] text-[#1BC47D] hover:bg-[#1BC47D]/10 md:flex-1"
           onClick={() => previousStep()}
         >
-          ??????
+          นัดหมอ
         </Button>
         <Button
           variant="ghost"
           className="order-3 rounded-full text-gray-600 hover:bg-gray-100 md:flex-1"
           onClick={() => router.push("/landing_page")}
         >
-          ????????????
+          กลับหน้าหลัก
         </Button>
       </div>
     </div>

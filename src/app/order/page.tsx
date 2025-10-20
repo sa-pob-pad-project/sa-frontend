@@ -20,6 +20,14 @@ import { ReviewStep } from "@/components/order/ReviewStep"
 import { PaymentStep } from "@/components/order/PaymentStep"
 import { ResultStep } from "@/components/order/ResultStep"
 
+const STEP_TITLES: Record<OrderFlowStepId, string> = {
+  shipping: "ข้อมูลการจัดส่ง",
+  status: "สถานะการสั่งยา",
+  review: "ตรวจสอบรายการยา",
+  payment: "ชำระเงิน",
+  result: "สรุปสถานะ",
+}
+
 function OrderPageBody() {
   const router = useRouter()
   const pathname = usePathname()
@@ -59,23 +67,6 @@ function OrderPageBody() {
     )
   }, [state.currentStep, searchParams, router, pathname])
 
-  const nameStepMap = () => {
-    switch (state.currentStep) {
-      case "shipping":
-        return "ข้อมูลจัดส่ง"
-      case "status":
-        return "ตรวจสอบสถานะ"
-      case "review":
-        return "ตรวจสอบคำสั่งซื้อ"
-      case "payment":
-        return "ชำระเงิน"
-      case "result":
-        return "ผลลัพธ์คำสั่งซื้อ"
-      default:
-        return "ข้อมูลจัดส่ง"
-    }
-  }
-
   const renderStep = () => {
     switch (state.currentStep) {
       case "shipping":
@@ -107,15 +98,18 @@ function OrderPageBody() {
           </button>
           <div>
             <h1 className="text-lg font-semibold text-gray-900 md:text-2xl">
-              {nameStepMap()}
+              กระบวนการสั่งยา
             </h1>
-            {/* <p className="text-xs text-gray-500 md:text-sm">
+            <p className="text-xs text-gray-500 md:text-sm">
               ทำตามขั้นตอนทีละขั้นเพื่อสั่งยาและชำระเงินอย่างครบถ้วน
-            </p> */}
+            </p>
           </div>
+          <span className="ml-auto rounded-full bg-[#1BC47D]/10 px-3 py-1 text-xs font-medium text-[#1BC47D] md:text-sm">
+            {STEP_TITLES[state.currentStep]}
+          </span>
         </header>
-        <OrderStepper />
 
+        <OrderStepper />
 
         <main className="rounded-3xl bg-transparent">{renderStep()}</main>
       </div>
@@ -130,3 +124,4 @@ export default function OrderPage() {
     </OrderFlowProvider>
   )
 }
+
