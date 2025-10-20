@@ -15,13 +15,6 @@ const STATUS_COLORS: Record<string, string> = {
   COMPLETED: "#E91E63",
 }
 
-// function generateFallbackOrderId() {
-//   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-//     return `ORD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
-//   }
-//   return `ORD-${Date.now().toString(36).toUpperCase()}`
-// }
-
 export function StatusStep() {
   const router = useRouter()
   const {
@@ -31,12 +24,6 @@ export function StatusStep() {
     previousStep,
     setOrderId,
   } = useOrderFlow()
-
-  useEffect(() => {
-    if (state.orderId) {
-      setOrderId(state.orderId)
-    }
-  }, [setOrderId, state.orderId])
 
   const thaiDateFormatter = useMemo(
     () =>

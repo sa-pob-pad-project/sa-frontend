@@ -181,59 +181,19 @@ const ORDER_STATUS_SEQUENCE: OrderStatusMeta[] = [
 
 const ORDER_FLOW_STORAGE_KEY = "order-flow-state"
 
-const DEFAULT_HISTORY: OrderHistoryEntry[] = [
-  {
-    id: "history-001",
-    orderNumber: "123456789",
-    createdAt: "2025-09-17T08:00:00+07:00",
-    doctor: {
-      id: "doctor-001",
-      name: "นพ.เทิด เทิน",
-      specialty: "แพทย์แผนทั่วไป",
-      hospital: "โรงพยาบาลวิจัยควอนตัมการแพทย์ศาสตร์",
-      avatarUrl: "/images/doctor-placeholder.svg",
-    },
-    note: "มีอาการปวดศีรษะเรื้อรัง ตรวจติดตามทุก 2 เดือน",
-    items: [
-      {
-        id: "medicine-001",
-        name: "ยาแก้ปวดศีรษะ",
-        dosage: "12 เม็ด / แพ็ค",
-        quantity: 6,
-        price: 250,
-      },
-      {
-        id: "medicine-002",
-        name: "วิตามินบำรุงสมอง",
-        dosage: "12 เม็ด / แพ็ค",
-        quantity: 6,
-        price: 250,
-      },
-      {
-        id: "medicine-003",
-        name: "ยาคลายกล้ามเนื้อ",
-        dosage: "12 เม็ด / แพ็ค",
-        quantity: 6,
-        price: 250,
-      },
-    ],
-  },
-]
-
 const DEFAULT_STATE: OrderFlowState = {
   steps: ORDER_FLOW_STEPS.map((step) => step.id),
   currentStep: "shipping",
-  history: DEFAULT_HISTORY,
+  history: [], // ไม่มีข้อมูล mock เริ่มต้น
   doctor: {
-    ...(DEFAULT_HISTORY[0]?.doctor ?? {
-      id: "doctor-default",
-      name: "ทีมแพทย์ประจำโรงพยาบาล",
-      specialty: "แพทย์ประจำ",
-      hospital: "โรงพยาบาลของคุณ",
-      avatarUrl: "/images/doctor-placeholder.svg",
-    }),
+    // เอาค่าตัวอย่างออก ให้เป็น fallback ว่าง ๆ เพื่อรอข้อมูลจาก API
+    id: "",
+    name: "",
+    specialty: "",
+    hospital: "",
+    avatarUrl: undefined,
   },
-  items: DEFAULT_HISTORY[0]?.items ?? [],
+  items: [], // ว่างเริ่มต้น (ไม่มี mock)
   shipping: {
     method: "flash",
     address: "",
