@@ -28,6 +28,15 @@ const STEP_TITLES: Record<OrderFlowStepId, string> = {
   result: "สรุปสถานะ",
 }
 
+// type Props = {
+//   params: {
+//     order_id: string
+//   },
+//   searchParams: {
+//     step?: string
+//   } 
+// }
+
 function OrderPageBody() {
   const router = useRouter()
   const pathname = usePathname()
@@ -117,9 +126,12 @@ function OrderPageBody() {
   )
 }
 
-export default function OrderPage() {
+export default function OrderPage({ params, searchParams }: { params: { order_id: string }, searchParams: { step?: string } }) {
   return (
-    <OrderFlowProvider>
+    <OrderFlowProvider
+      initialOrderId={params.order_id}
+      initialStep={(searchParams.step as any) || undefined}
+    >
       <OrderPageBody />
     </OrderFlowProvider>
   )

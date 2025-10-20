@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useReducer } from "react"
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from "react"
+import { getOrderById } from "@/services/apiOrderService"
 
 export type DeliveryMethod = "flash" | "pick_up"
 export type PaymentMethod = "credit_card" | "promptpay"
@@ -383,12 +384,20 @@ function getInitialState(): OrderFlowState {
   }
 }
 
-export function OrderFlowProvider({ children }: { children: React.ReactNode }) {
+type Props = {
+  children: React.ReactNode
+  /** ใส่มาจาก params.order_id เวลาอยู่ /order/[order_id] */
+  initialOrderId?: string
+  /** ถ้าจะบังคับ step จาก URL เช่น ?step=review */
+  initialStep?: OrderFlowStepId
+}
+
+export function OrderFlowProvider({ children, initialOrderId, initialStep }: Props) {
   const [state, dispatch] = useReducer(orderFlowReducer, undefined, getInitialState)
 
+  // --- 1) เซฟ state ลง sessionStorage ตามที่คุณทำอยู่ ---
   useEffect(() => {
     if (typeof window === "undefined") return
-
     const serialisableState = {
       currentStep: state.currentStep,
       shipping: state.shipping,
@@ -397,11 +406,7 @@ export function OrderFlowProvider({ children }: { children: React.ReactNode }) {
       orderId: state.orderId,
       status: state.status,
     }
-
-    window.sessionStorage.setItem(
-      ORDER_FLOW_STORAGE_KEY,
-      JSON.stringify(serialisableState),
-    )
+    window.sessionStorage.setItem(ORDER_FLOW_STORAGE_KEY, JSON.stringify(serialisableState))
   }, [
     state.currentStep,
     state.shipping,
@@ -414,31 +419,80 @@ export function OrderFlowProvider({ children }: { children: React.ReactNode }) {
   const memoisedMeta = useMemo(() => ORDER_FLOW_STEPS, [])
   const memoisedStatusMeta = useMemo(() => ORDER_STATUS_SEQUENCE, [])
 
-  const value = useMemo<OrderFlowContextValue>(() => {
-    return {
-      state,
-      stepMeta: memoisedMeta,
-      statusMeta: memoisedStatusMeta,
-      nextStep: () => dispatch({ type: "NEXT_STEP" }),
-      previousStep: () => dispatch({ type: "PREVIOUS_STEP" }),
-      goToStep: (step) => dispatch({ type: "GO_TO_STEP", payload: { step } }),
-      resetFlow: () => dispatch({ type: "RESET_FLOW" }),
-      setShipping: (info) => dispatch({ type: "SET_SHIPPING", payload: info }),
-      setItems: (items) => dispatch({ type: "SET_ITEMS", payload: items }),
-      setNote: (note) => dispatch({ type: "SET_NOTE", payload: note }),
-      setPaymentMethod: (method) =>
-        dispatch({ type: "SET_PAYMENT_METHOD", payload: method }),
-      setCardDraft: (draft) =>
-        dispatch({ type: "SET_CARD_DRAFT", payload: draft }),
-      setPromptPayDraft: (draft) =>
-        dispatch({ type: "SET_PROMPTPAY_DRAFT", payload: draft }),
-      setOrderId: (orderId) =>
-        dispatch({ type: "SET_ORDER_ID", payload: orderId }),
-      setStatus: (status) => dispatch({ type: "SET_STATUS", payload: status }),
-      beginFromHistory: (historyId) =>
-        dispatch({ type: "BEGIN_FROM_HISTORY", payload: { historyId } }),
+  // --- 2) bootstrap จาก URL: ตั้ง orderId/step ครั้งเดียว แล้วโหลดออเดอร์จาก API ---
+  const bootRef = useRef(false)
+  useEffect(() => {
+    if (bootRef.current) return
+    bootRef.current = true
+
+    // ถ้ามี initialStep ให้ตั้ง step เลย (ทับ state ที่กู้จาก session)
+    if (initialStep) {
+      dispatch({ type: "GO_TO_STEP", payload: { step: initialStep } })
     }
-  }, [state, memoisedMeta, memoisedStatusMeta])
+
+    // ถ้ามี order_id จาก URL → ตั้ง orderId แล้วดึงข้อมูลจาก API
+    if (initialOrderId) {
+      // ถ้า state มี orderId คนละอัน ให้ reset ก่อน เพื่อกันซาก state เดิม
+      if (state.orderId && state.orderId !== initialOrderId) {
+        dispatch({ type: "RESET_FLOW" })
+      }
+      dispatch({ type: "SET_ORDER_ID", payload: initialOrderId })
+
+      ;(async () => {
+        try {
+          const resp = await getOrderById(initialOrderId)
+          const ord = Array.isArray(resp?.orders) ? resp.orders[0] : null
+          if (!ord) return
+
+          // map API → state ภายใน
+          // - items: ใช้เฉพาะ id/name/quantity ที่ backend ให้มา
+          //   (ราคาจะไปดึงใน ReviewStep ด้วย getMedicineById ตามที่เราเซ็ตไว้แล้ว)
+          const items = (ord.order_items ?? []).map((x: any) => ({
+            id: String(x.medicine_id),
+            name: x.medicine_name,
+            quantity: Number(x.quantity ?? 0),
+            // price/dosage/unit ปล่อยว่างไว้, ให้ ReviewStep ดึงราคาเอง
+          }))
+
+          if (items.length) {
+            dispatch({ type: "SET_ITEMS", payload: items })
+          }
+          if (ord.status) {
+            dispatch({ type: "SET_STATUS", payload: ord.status })
+          }
+          if (ord.note) {
+            dispatch({ type: "SET_NOTE", payload: ord.note })
+          }
+
+          // ถ้าต้องการเซ็ต shipping จาก API ด้วย ก็เติม mapping ที่นี่
+          // เช่น dispatch({ type: "SET_SHIPPING", payload: { method: ... } })
+        } catch (e) {
+          // เงียบ ๆ ไปก่อน หรือจะ log ก็ได้
+          // console.warn("[order-flow] bootstrap getOrderById failed", e)
+        }
+      })()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialOrderId, initialStep])
+
+  const value = useMemo<OrderFlowContextValue>(() => ({
+    state,
+    stepMeta: memoisedMeta,
+    statusMeta: memoisedStatusMeta,
+    nextStep: () => dispatch({ type: "NEXT_STEP" }),
+    previousStep: () => dispatch({ type: "PREVIOUS_STEP" }),
+    goToStep: (step) => dispatch({ type: "GO_TO_STEP", payload: { step } }),
+    resetFlow: () => dispatch({ type: "RESET_FLOW" }),
+    setShipping: (info) => dispatch({ type: "SET_SHIPPING", payload: info }),
+    setItems: (items) => dispatch({ type: "SET_ITEMS", payload: items }),
+    setNote: (note) => dispatch({ type: "SET_NOTE", payload: note }),
+    setPaymentMethod: (method) => dispatch({ type: "SET_PAYMENT_METHOD", payload: method }),
+    setCardDraft: (draft) => dispatch({ type: "SET_CARD_DRAFT", payload: draft }),
+    setPromptPayDraft: (draft) => dispatch({ type: "SET_PROMPTPAY_DRAFT", payload: draft }),
+    setOrderId: (orderId) => dispatch({ type: "SET_ORDER_ID", payload: orderId }),
+    setStatus: (status) => dispatch({ type: "SET_STATUS", payload: status }),
+    beginFromHistory: (historyId) => dispatch({ type: "BEGIN_FROM_HISTORY", payload: { historyId } }),
+  }), [state, memoisedMeta, memoisedStatusMeta])
 
   return (
     <OrderFlowContext.Provider value={value}>

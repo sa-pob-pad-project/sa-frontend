@@ -65,16 +65,15 @@ export function ReviewStep() {
       try {
         // 1) ดึงรายการออเดอร์
         const resp = await getOrderById(state.orderId)
-        const apiOrder: ApiOrder | undefined = Array.isArray(resp?.orders)
-          ? resp.orders[0]
-          : undefined
-        if (!apiOrder) throw new Error("ไม่พบคำสั่งซื้อในระบบ")
+        // console.log("Order details response:", resp.order_items)
+        const orderItems = resp.order_items;
+        if (!Array.isArray(orderItems)) throw new Error("ไม่พบคำสั่งซื้อในระบบ")
 
         // sync note ถ้า state ยังว่าง
-        if ((!state.note || !state.note.trim()) && apiOrder.note) {
-          setNote(apiOrder.note)
+        if ((!state.note || !state.note.trim()) && resp.note) {
+          setNote(resp.note)
         }
-        setApiTotal(apiOrder.total_amount)
+        setApiTotal(resp.total_amount)
 
         // 2) เตรียม map จาก state.items (เพื่อดึง dosage ถ้ามี)
         const localById = new Map<string, { dosage?: string }>()
@@ -97,7 +96,7 @@ export function ReviewStep() {
           return entry
         }
 
-        const mergedPromises = (apiOrder.order_items ?? []).map(async (it) => {
+        const mergedPromises = (resp.order_items ?? []).map(async (it: any) => {
           const id = String(it.medicine_id)
           const name = it.medicine_name
           let priceInfo: { price: number; unit: string | undefined } = { price: 0, unit: undefined }
