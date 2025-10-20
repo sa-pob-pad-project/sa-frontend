@@ -69,7 +69,7 @@ export default function CheckRightsPage() {
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleString("th-TH");
 
 return (
-  <div className="min-h-screen bg-[#AFFFD5]">
+  <div className="min-h-screen bg-gradient-to-b from-[#E9FFF2] to-white">
       <nav className="bg-white text-black px-6 py-4 flex justify-between items-center shadow-md">
         <button
           onClick={() => router.push("/landing_page")}
@@ -83,14 +83,14 @@ return (
       </nav>
       <main className="p-6">
 
-        <h1 className="text-L font-bold mb-4 text-green-700">
+        <h1 className="text-lg font-bold mb-4 text-green-700">
           การสั่งยาครั้งล่าสุด :</h1>
         <div className="bg-white rounded-xl shadow p-20">
         </div>
 
 
          <section>
-          <h2 className="text-lg font-bold mb-3 text-green-700">ประวัติการนัดที่ผ่านมา :</h2>
+          <h2 className="text-lg font-bold mb-3 mt-3 text-green-700">ประวัติการนัดที่ผ่านมา :</h2>
           <ul className="space-y-4">  
             {latest ?  (
               <li

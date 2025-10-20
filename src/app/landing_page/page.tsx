@@ -89,12 +89,12 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#E9FFF2] to-white text-gray-800">
       {/* Navbar */}
-      <nav className="bg-[#AFFFD5]/90 backdrop-blur-md px-6 py-4 flex justify-between items-center shadow-md sticky top-0 rounded-b-3xl z-10">
+      <nav className="bg-[#AFFFD5]/90 backdrop-blur-md px-6 py-4 flex justify-between items-center shadow-md sticky top-0  z-10">
         <h1
           onClick={() => goTo("/landing_page")}
-          className="text-black text-2xl font-bold cursor-pointer tracking-tight"
+          className="text-black text-2xl font-medium cursor-pointer tracking-tight"
         >
-          ระบบนัดหมอ
+          Appointment System
         </h1>
 
         {profile ? (
@@ -157,12 +157,7 @@ export default function LandingPage() {
                   <p className="text-gray-500 text-sm mt-1">
                     เวลา: {formatDate(item.start_time)} - {formatDate(item.end_time)}
                   </p>
-                  <p className="text-gray-500 text-sm mt-1">สถานะ: {item.status}</p>
                 </div>
-
-                <button className="bg-[#AFFFD5] hover:bg-green-300 px-4 py-2 rounded-2xl font-medium text-green-900 transition shadow-sm">
-                  รายละเอียด
-                </button>
               </li>
             ))}
           </ul>

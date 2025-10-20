@@ -41,7 +41,7 @@ export default function PrescriptionHistoryPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#C7FFE4] text-gray-900">
+    <main className="min-h-screen bg-gradient-to-b from-[#E9FFF2] to-white text-gray-900">
       {/* ✅ Header */}
       <header className="sticky top-0 z-10 bg-white shadow flex items-center px-4 py-4 sm:px-6">
         <button
@@ -58,7 +58,7 @@ export default function PrescriptionHistoryPage() {
 
       {/* ✅ Latest Order */}
       <section className="p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-[#00875A] mb-3">
+        <h2 className="text-lg sm:text-xl font-semibold text-black mb-3">
           สถานะล่าสุด
         </h2>
 
@@ -105,7 +105,7 @@ export default function PrescriptionHistoryPage() {
 
       {/* ✅ Past Orders */}
       <section className="p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-[#00875A] mb-3">
+        <h2 className="text-lg sm:text-xl font-semibold text-black mb-3">
           ประวัติการสั่งยาที่ผ่านมา
         </h2>
 
