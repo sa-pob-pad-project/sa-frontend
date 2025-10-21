@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Calendar from "react-calendar";
@@ -17,7 +17,7 @@ interface Doctor {
   specialty: string;
 }
 
-interface DoctorSlot {
+interface AppointmentSlotResponse {
   [key: string]: {
     doctor_id: string;
     end_time: string;
@@ -25,6 +25,22 @@ interface DoctorSlot {
     status: string;
   }[];
 }
+
+interface SlotDetail {
+  doctor_id: string;
+  end_time: string;
+  start_time: string;
+  status: string;
+}
+
+const sanitizeSlotTime = (time: string) => time.replace("Z00:00", "").trim();
+
+const formatSlotRange = (slot: SlotDetail) => {
+  const start = DateTime.fromFormat(sanitizeSlotTime(slot.start_time), "HH:mm").toFormat("HH:mm");
+  const end = DateTime.fromFormat(sanitizeSlotTime(slot.end_time), "HH:mm").toFormat("HH:mm");
+  return `${start} - ${end}`;
+};
+
 export default function BookingPage() {
   const router = useRouter();
 
@@ -32,12 +48,15 @@ export default function BookingPage() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [timeSlots, setTimeSlots] = useState<string[]>([]);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [slotMap, setSlotMap] = useState<Map<string, any[]>>(new Map());
+  const [timeSlots, setTimeSlots] = useState<SlotDetail[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<SlotDetail | null>(null);
+  const [slotMap, setSlotMap] = useState<Map<string, SlotDetail[]>>(new Map());
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
+
+  const availableDateSet = useMemo(() => new Set(availableDates), [availableDates]);
 
   
   useEffect(() => {
@@ -60,68 +79,84 @@ export default function BookingPage() {
   const fetchDoctorSlots = async (doctorId: string) => {
     setLoadingSlots(true);
     try {
-      const slots: DoctorSlot = await AppointmentSlots(doctorId);
+      const slots: AppointmentSlotResponse = await AppointmentSlots(doctorId);
       
       // Convert object keys (date strings) to a Map for easier lookup
       const slotsKeys = Object.keys(slots);
-      const newSlotMap = new Map<string, any[]>();
-      
-      slotsKeys.forEach(key => {
-        newSlotMap.set(key, slots[key]);
+      const newSlotMap = new Map<string, SlotDetail[]>();
+      const normalizedDates: string[] = [];
+
+      slotsKeys.forEach((key) => {
+        try {
+          // Parse the ISO date with timezone and extract just the date part
+          const dt = DateTime.fromISO(key);
+          const normalizedKey = dt.toISODate();
+          
+          if (normalizedKey) {
+            newSlotMap.set(normalizedKey, slots[key]);
+            normalizedDates.push(normalizedKey);
+          } else {
+            console.warn("Invalid slot date key:", key);
+          }
+        } catch (err) {
+          console.warn("Error parsing slot date key:", key, err);
+        }
       });
       
-      console.log('slotMap', newSlotMap);
       setSlotMap(newSlotMap);
+      setAvailableDates(Array.from(new Set(normalizedDates)));
+      setSelectedDate(null);
+      setSelectedSlot(null);
       setTimeSlots([]);
     } catch (error) {
       console.error("Error fetching slots:", error);
-      setSlotMap(new Map());
+      setSlotMap(new Map<string, SlotDetail[]>());
+      setAvailableDates([]);
+      setSelectedDate(null);
+      setSelectedSlot(null);
       setTimeSlots([]);
     } finally {
       setLoadingSlots(false);
     }
   };
 
-  const handleDateChange = async (date: Date) => {
+  const handleDateChange = (date: Date) => {
     setSelectedDate(date);
-    setSelectedTime(null);
+    setSelectedSlot(null);
 
-    // Convert selected date to date string format (YYYY-MM-DD)
-    const dateStr = date.toISOString().split("T")[0];
-    
-    // Get slots for the selected date from slotMap
+    const dateStr = DateTime.fromJSDate(date).toISODate();
+    if (!dateStr) {
+      setTimeSlots([]);
+      return;
+    }
+
     const slotsForDate = slotMap.get(dateStr) || [];
-    
-    // Format the time slots
-    const formattedSlots = slotsForDate.map((slot: any) => {
-      const rawStart = slot.start_time.replace('Z00:00', '');
-      const rawEnd = slot.end_time.replace('Z00:00', '');
-      const start = DateTime.fromFormat(rawStart, "HH:mm").toFormat("HH:mm");
-      const end = DateTime.fromFormat(rawEnd, "HH:mm").toFormat("HH:mm");
-      return `${start} - ${end}`;
-    });
-    
-    console.log('formattedSlots for', dateStr, formattedSlots);
-    setTimeSlots(formattedSlots);
+    setTimeSlots(slotsForDate);
   };
 
  
   const handleConfirm = async () => {
-    if (!selectedDoctor || !selectedDate || !selectedTime) {
+    if (!selectedDoctor || !selectedDate || !selectedSlot) {
       alert("กรุณาเลือกหมอ วันที่ และเวลาให้ครบ");
       return;
     }
 
+    if (selectedSlot.status !== "available") {
+      alert("ช่วงเวลานี้ไม่พร้อมให้บริการ กรุณาเลือกช่วงเวลาอื่น");
+      return;
+    }
+
     try {
-  
-      const startTimeISO = `${selectedDate.toISOString().split("T")[0]}T${selectedTime.split(" - ")[0]}:00`;
+      const appointmentDate = DateTime.fromJSDate(selectedDate).toISODate();
+      if (!appointmentDate) {
+        throw new Error("Invalid appointment date");
+      }
 
-      await BookAppointment(
-        selectedDoctor.id,
-        startTimeISO,
-      );
+      const startTimeISO = `${appointmentDate}T${sanitizeSlotTime(selectedSlot.start_time)}:00.000Z`;
 
-      alert(`จองนัดสำเร็จ!\nหมอ: ${selectedDoctor.first_name} ${selectedDoctor.last_name}\nวันที่: ${selectedDate.toDateString()}\nเวลา: ${selectedTime}`);
+      await BookAppointment(selectedDoctor.id, startTimeISO);
+
+      alert(`จองนัดสำเร็จ!\nหมอ: ${selectedDoctor.first_name} ${selectedDoctor.last_name}\nวันที่: ${selectedDate.toDateString()}\nเวลา: ${formatSlotRange(selectedSlot)}`);
       router.push("/landing_page/history_app");
     } catch (error) {
       console.error("Booking failed:", error);
@@ -162,10 +197,13 @@ export default function BookingPage() {
                 const doctor = doctors.find(d => d.id === e.target.value) || null;
                 setSelectedDoctor(doctor);
                 setSelectedDate(null);
-                setSelectedTime(null);
+                setSelectedSlot(null);
+                setTimeSlots([]);
                 if (doctor) {
                   fetchDoctorSlots(doctor.id);
                 } else {
+                  setSlotMap(new Map<string, SlotDetail[]>());
+                  setAvailableDates([]);
                   setTimeSlots([]);
                 }
               }}
@@ -188,9 +226,16 @@ export default function BookingPage() {
           <div className="flex justify-center">
             <Calendar
               onChange={(value) => handleDateChange(value as Date)}
-              value={selectedDate}
+              value={selectedDate ?? undefined}
               minDate={new Date()}
               locale="th-TH"
+              tileDisabled={({ date, view }) => {
+                if (view !== "month") {
+                  return false;
+                }
+                const targetDate = DateTime.fromJSDate(date).toISODate();
+                return !targetDate || !availableDateSet.has(targetDate);
+              }}
               className="rounded-lg border-0 text-gray-700 text-base"
             />
           </div>
@@ -205,19 +250,31 @@ export default function BookingPage() {
             <p>กำลังโหลดเวลาว่าง...</p>
           ) : timeSlots.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {timeSlots.map(time => (
-                <button
-                  key={time}
-                  onClick={() => setSelectedTime(time)}
-                  className={`py-2 rounded-lg text-sm font-medium transition ${
-                    selectedTime === time
-                      ? "bg-[#16A34A] text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-green-100"
-                  }`}
-                >
-                  {time}
-                </button>
-              ))}
+              {timeSlots.map(slot => {
+                const isAvailable = slot.status === "available";
+                const isSelected = selectedSlot === slot;
+                return (
+                  <button
+                    key={`${slot.start_time}-${slot.end_time}`}
+                    onClick={() => {
+                      if (isAvailable) {
+                        setSelectedSlot(slot);
+                      }
+                    }}
+                    disabled={!isAvailable}
+                    title={isAvailable ? "Select this slot" : "Slot unavailable"}
+                    className={`py-2 rounded-lg text-sm font-medium transition ${
+                      isSelected
+                        ? "bg-[#16A34A] text-white shadow-md"
+                        : isAvailable
+                          ? "bg-gray-100 text-gray-700 hover:bg-green-100"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    {formatSlotRange(slot)}
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <p className="text-gray-600 text-sm">ไม่มีช่วงเวลาว่างในวันนี้</p>
@@ -226,14 +283,14 @@ export default function BookingPage() {
       )}
 
   
-      {selectedDoctor && selectedDate && selectedTime && (
+      {selectedDoctor && selectedDate && selectedSlot && (
         <section className="bg-[#D1FAE5] w-full mt-6 rounded-2xl shadow p-6">
           <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">สรุปการนัดหมาย</h2>
           <div className="bg-white rounded-md p-4 text-gray-700 text-sm sm:text-base leading-relaxed">
             <p>
               พบนายแพทย์ <span className="font-semibold">{selectedDoctor.first_name} {selectedDoctor.last_name}</span> ({selectedDoctor.specialty})
               <br />
-              วันที่ {formatDate(selectedDate)} เวลา {selectedTime} น.
+              วันที่ {formatDate(selectedDate)} เวลา {formatSlotRange(selectedSlot)} น.
               <br />
               โรงพยาบาลวิศวะคอมเกษตรศาสตร์
             </p>

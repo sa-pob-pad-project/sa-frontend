@@ -18,13 +18,13 @@
 }
 
 .react-calendar__tile--active {
-  background: #16a34a !important;
+  background: #ef4444 !important;
   color: white !important;
   font-weight: 600;
 }
 
 .react-calendar__tile:hover {
-  background: #bbf7d0 !important;
+  background: #fe8989 !important;
 }
 
 .react-calendar__month-view__weekdays {
