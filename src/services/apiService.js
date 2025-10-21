@@ -95,6 +95,8 @@ export async function getDoctorById(doctorId) {
     } catch (error) {
         throw new Error(extractErrorMessage(error, "Failed to get doctor info"))
     }
+}
+
 /* ===================== LATEST ORDER ===================== */
 export async function latestOrder() {
   const res = await http.get("/api/order/v1/orders/latest");
@@ -123,5 +125,5 @@ export async function AllDoctors() {
   const data = res.data;
   if (res.status === 200) return data;
   else if (res.status === 500) throw new Error(data.error || "Failed to get doctors");
-  else throw new Error(data.error || `Unexpected status: ${res.status}`);  
+  else throw new Error(data.error || `Unexpected status: ${res.status}`);
 }
