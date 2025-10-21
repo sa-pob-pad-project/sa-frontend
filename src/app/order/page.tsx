@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useRef } from "react"
+import { Suspense, useEffect, useRef } from "react"
 import {
   usePathname,
   useRouter,
@@ -129,7 +129,9 @@ function OrderPageBody() {
 export default function OrderPage() {
   return (
     <OrderFlowProvider>
-      <OrderPageBody />
+      <Suspense fallback={<div>Loading...</div>}>
+        <OrderPageBody />
+      </Suspense>
     </OrderFlowProvider>
   )
 }
