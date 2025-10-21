@@ -127,32 +127,31 @@ export function StatusStep() {
           <div>
             <p className="text-sm font-semibold text-gray-800">สถานะ</p>
             <div className="mt-4 flex flex-col gap-4">
-              {statusMeta.map((meta, index) => {
-                const isActive = index === statusIndex
-                const isCompleted = index < statusIndex
-                const isLast = index === statusMeta.length - 1
+            {statusMeta.map((meta, index) => {
+              const isCurrent = index === statusIndex
+              const isPast = index < statusIndex
+              const isNext = index === statusIndex + 1
+              const isLast = index === statusMeta.length - 1
 
-                // 🟩 Dynamic color logic
-                let color = "#D1D5DB" // default = gray
-                if (isCompleted) color = "#22C55E" // green-500
-                else if (isActive) color = "#FACC15" // yellow-400
+              // ✅ Logic สี
+              let color = "#D1D5DB" // ยังไม่ถึง
+              if (isPast || isCurrent) color = "#22C55E" // ผ่านแล้วหรือกำลังอยู่ → เขียว
+              else if (isNext) color = "#FACC15" // ขั้นถัดไป → เหลือง
 
-                return (
-                  <div key={meta.key} className="flex items-start gap-3">
-                    <div className="flex flex-col items-center">
-                      <span
-                        className="h-3 w-3 rounded-full border"
-                        style={{
-                          backgroundColor: color,
-                          borderColor: color,
-                        }}
-                      />
+              return (
+                <div key={meta.key} className="flex items-start gap-3">
+                  <div className="flex flex-col items-center">
+                    <span
+                      className="h-3 w-3 rounded-full border"
+                      style={{ backgroundColor: color, borderColor: color }}
+                    />
                       {!isLast && (
                         <span
                           className="mt-1 w-px flex-1"
                           style={{
-                            backgroundColor: isCompleted ? "#22C55E" : "#D1D5DB",
-                            opacity: isCompleted ? 0.8 : 1,
+                            backgroundColor:
+                              isPast || isCurrent ? "#22C55E" : "#D1D5DB",
+                            opacity: isPast ? 0.8 : 1,
                           }}
                         />
                       )}
@@ -161,16 +160,19 @@ export function StatusStep() {
                     <div className="flex w-full items-center justify-between">
                       <span
                         className={`text-sm ${
-                          isActive
+                          isCurrent
                             ? "font-semibold text-gray-900"
-                            : isCompleted
+                            : isPast
                             ? "text-gray-800"
+                            : isNext
+                            ? "text-yellow-600"
                             : "text-gray-500"
                         }`}
                       >
                         {meta.label}
                       </span>
-                      {isActive && (
+
+                      {isCurrent && (
                         <span className="text-xs text-gray-600">
                           {thaiTimeFormatter.format(now)} , {thaiDateFormatter.format(now)}
                         </span>
