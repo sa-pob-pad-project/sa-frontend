@@ -89,7 +89,7 @@ function OrderPageBody() {
             case "payment":
                 return <PaymentStep />;
             case "result":
-                return <StatusStep />;
+                return <ResultStep />;
             default:
                 return <StatusStep />;
         }

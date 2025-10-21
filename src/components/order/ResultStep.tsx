@@ -106,13 +106,15 @@ export function ResultStep() {
             <p className="text-sm font-semibold text-gray-800">ไทม์ไลน์สถานะ</p>
             <div className="mt-4 flex flex-col gap-4">
               {statusMeta.map((meta, index) => {
-                const isActive = index === statusIndex
-                const isCompleted = index < statusIndex
+                const isCurrent = index === statusIndex
+                const isPast = index < statusIndex
+                const isNext = index === statusIndex + 1
                 const isLast = index === statusMeta.length - 1
 
-                let color = "#D1D5DB" // ยังไม่ถึง → เทา
-                if (isCompleted) color = "#22C55E" // ผ่านแล้ว → เขียว
-                else if (isActive) color = "#FACC15" // กำลังอยู่ → เหลือง
+                // ✅ Logic สี
+                let color = "#D1D5DB" // ยังไม่ถึง
+                if (isPast || isCurrent) color = "#22C55E" // ผ่านแล้วหรือกำลังอยู่ → เขียว
+                else if (isNext) color = "#FACC15" // ขั้นถัดไป → เหลือง
 
                 return (
                   <div key={meta.key} className="flex items-start gap-3">
@@ -121,38 +123,42 @@ export function ResultStep() {
                         className="h-3 w-3 rounded-full border"
                         style={{ backgroundColor: color, borderColor: color }}
                       />
-                      {!isLast && (
-                        <span
-                          className="mt-1 w-px flex-1"
-                          style={{
-                            backgroundColor: isCompleted ? "#22C55E" : "#D1D5DB",
-                            opacity: isCompleted ? 0.8 : 1,
-                          }}
-                        />
-                      )}
-                    </div>
+                        {!isLast && (
+                          <span
+                            className="mt-1 w-px flex-1"
+                            style={{
+                              backgroundColor:
+                                isPast || isCurrent ? "#22C55E" : "#D1D5DB",
+                              opacity: isPast ? 0.8 : 1,
+                            }}
+                          />
+                        )}
+                      </div>
 
-                    <div className="flex w-full items-center justify-between">
-                      <span
-                        className={`text-sm ${
-                          isActive
-                            ? "font-semibold text-gray-900"
-                            : isCompleted
-                            ? "text-gray-800"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {meta.label}
-                      </span>
-                      {isActive && (
-                        <span className="text-xs text-gray-600">
-                          {thaiTimeFormatter.format(now)} , {thaiDateFormatter.format(now)}
+                      <div className="flex w-full items-center justify-between">
+                        <span
+                          className={`text-sm ${
+                            isCurrent
+                              ? "font-semibold text-gray-900"
+                              : isPast
+                              ? "text-gray-800"
+                              : isNext
+                              ? "text-yellow-600"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {meta.label}
                         </span>
-                      )}
+
+                        {isCurrent && (
+                          <span className="text-xs text-gray-600">
+                            {thaiTimeFormatter.format(now)} , {thaiDateFormatter.format(now)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
             </div>
           </div>
         </div>
@@ -161,12 +167,12 @@ export function ResultStep() {
       {/* ปุ่มสำหรับหน้าสรุป (ไม่มี next/previous step เพื่อกันวนลูป) */}
       <div className="flex flex-col gap-4">
         {/* แถวแรก: ปุ่มหลัก */}
-        {/* <Button
+        <Button
           className="w-full rounded-full bg-[#1BC47D] text-white hover:bg-[#18a86a]"
           onClick={() => router.push("/landing_page")}
         >
           กลับหน้าหลัก
-        </Button> */}
+        </Button>
 
         {/* แถวสอง: 2 คอลัมน์ */}
         <div className="grid grid-cols-2 gap-3">
@@ -183,7 +189,7 @@ export function ResultStep() {
           <Button
             variant="outline"
             className="w-full rounded-full border-[#1BC47D] text-[#1BC47D] hover:bg-[#1BC47D]/10"
-            onClick={() => router.push(`/order/${state.orderId}?step=status`)}
+            onClick={() => router.push(`/order/${state.orderId}?step=result`)}
           >
             รีเฟรชสถานะ
           </Button>
