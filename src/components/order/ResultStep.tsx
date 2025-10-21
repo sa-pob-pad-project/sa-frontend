@@ -1,115 +1,194 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2 } from "lucide-react"
 
 import { useOrderFlow } from "@/contexts/OrderFlowContext"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
+import { getOrderById } from "@/services/apiOrderService"
+import { getDoctorById } from "@/services/apiService"
+
+// ให้สถานะเป็นตัวพิมพ์เล็กตรงกับ backend
+function normalizeStatus(s: unknown) {
+  return String(s || "").toLowerCase()
+}
+
 export function ResultStep() {
   const router = useRouter()
-  const { state, statusMeta, setStatus, resetFlow } = useOrderFlow()
+  const { state, setStatus, statusMeta, resetFlow } = useOrderFlow()
 
-  const completed = state.status === "COMPLETED"
+  const [doctorName, setDoctorName] = useState<string>(state.doctor?.name || "-")
 
-  const formatCurrency = useMemo(
-    () =>
-      new Intl.NumberFormat("th-TH", {
-        style: "currency",
-        currency: "THB",
-        minimumFractionDigits: 0,
-      }),
+  // ถ้าไม่มี orderId ให้เด้งกลับไปเริ่มต้น
+  useEffect(() => {
+    if (!state.orderId) {
+      router.replace("/order?step=shipping")
+    }
+  }, [state.orderId, router])
+
+  // ดึงสถานะจริง + ชื่อหมอ "ครั้งเดียว" เมื่อมี orderId (ไม่มี redirect ใดๆ)
+  useEffect(() => {
+    if (!state.orderId) return
+    let ignore = false
+
+    ;(async () => {
+      try {
+        const res = await getOrderById(state.orderId!)
+        if (!res || ignore) return
+
+        if (res.status) {
+          setStatus(normalizeStatus(res.status) as any)
+        }
+
+        if (state?.doctor?.name) {
+          setDoctorName(state.doctor.name)
+        }
+
+        if (res.doctor_id) {
+          try {
+            const respd = await getDoctorById(res.doctor_id)
+            const d = Array.isArray(respd) ? respd[0] : respd
+            if (!ignore && d?.first_name && d?.last_name) {
+              setDoctorName(`${d.first_name} ${d.last_name}`)
+            }
+          } catch (err) {
+            console.warn("[result] fetch doctor failed:", err)
+          }
+        }
+      } catch (e) {
+        if (!ignore) console.warn("[result] fetch failed:", e)
+      }
+    })()
+
+    return () => { ignore = true }
+  }, [state.orderId, state.doctor?.name, setStatus])
+
+  const thaiDateFormatter = useMemo(
+    () => new Intl.DateTimeFormat("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" }),
+    [],
+  )
+  const thaiTimeFormatter = useMemo(
+    () => new Intl.DateTimeFormat("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false }),
     [],
   )
 
-  const total = useMemo(() => {
-    const subtotal = state.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    )
-    const deliveryFee = state.shipping.method === "flash" ? 80 : 0
-    return subtotal + deliveryFee
-  }, [state.items, state.shipping.method])
+  const now = new Date()
+  const shippingMethodText =
+    state.shipping.method === "flash" ? "จัดส่งถึงบ้าน" : "รับที่โรงพยาบาล"
+
+  const currentStatusMeta = statusMeta.find((m) => m.key === state.status)
+  const statusIndex = statusMeta.findIndex((m) => m.key === state.status)
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-        <CheckCircle2 className="h-6 w-6 text-[#1BC47D]" />
-        คำสั่งซื้อสำเร็จ
+      <div className="text-center">
+        <h2 className="text-lg font-semibold text-gray-900 md:text-xl">สรุปสถานะคำสั่งซื้อ</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          ขอบคุณที่ชำระเงิน! ด้านล่างคือความคืบหน้าล่าสุดของออเดอร์คุณ
+        </p>
       </div>
-      <p className="text-sm text-gray-600">
-        การชำระเงินเสร็จสมบูรณ์ สามารถตรวจสอบความคืบหน้าของการจัดส่งได้จากข้อมูลด้านล่าง
-      </p>
 
       <Card className="rounded-3xl border-none bg-[#BFFFE3] p-6 shadow-md">
-        <div className="flex flex-col gap-4 text-sm text-gray-700">
-          <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3">
-            <span>หมายเลขคำสั่งซื้อ</span>
-            <span className="font-semibold text-[#1BC47D]">
-              {state.orderId ?? "-"}
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {statusMeta.map((meta) => (
-              <div key={meta.key} className="flex items-center justify-between">
-                <span>{meta.label}</span>
-                <span
-                  className={`text-xs ${
-                    state.status === meta.key
-                      ? "text-[#1BC47D]"
-                      : "text-gray-500"
-                  }`}
-                >
-                  {state.status === meta.key ? "กำลังดำเนินการ" : ""}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-2xl bg-white/60 p-4">
-            <div className="flex items-center justify-between text-sm text-gray-700">
-              <span>ยอดรวมทั้งหมด</span>
-              <span className="font-semibold text-gray-900">
-                {formatCurrency.format(total)}
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-gray-600">
-              หมายเหตุ: {state.note ? state.note : "ไม่มี"}
+        <div className="flex flex-col gap-5 text-sm text-gray-700">
+          <div className="space-y-2">
+            <p>หมายเลขคำสั่ง : {state.orderId ?? "-"}</p>
+            <p>แพทย์ผู้ดูแล : {doctorName || "-"}</p>
+            <p>วิธีการจัดส่ง : {shippingMethodText}</p>
+            <p>สถานะการสั่ง : {currentStatusMeta?.label ?? "-"}</p>
+            <p>
+              อัปเดตล่าสุด : {thaiTimeFormatter.format(now)} , {thaiDateFormatter.format(now)}
             </p>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-gray-800">ไทม์ไลน์สถานะ</p>
+            <div className="mt-4 flex flex-col gap-4">
+              {statusMeta.map((meta, index) => {
+                const isActive = index === statusIndex
+                const isCompleted = index < statusIndex
+                const isLast = index === statusMeta.length - 1
+
+                let color = "#D1D5DB" // ยังไม่ถึง → เทา
+                if (isCompleted) color = "#22C55E" // ผ่านแล้ว → เขียว
+                else if (isActive) color = "#FACC15" // กำลังอยู่ → เหลือง
+
+                return (
+                  <div key={meta.key} className="flex items-start gap-3">
+                    <div className="flex flex-col items-center">
+                      <span
+                        className="h-3 w-3 rounded-full border"
+                        style={{ backgroundColor: color, borderColor: color }}
+                      />
+                      {!isLast && (
+                        <span
+                          className="mt-1 w-px flex-1"
+                          style={{
+                            backgroundColor: isCompleted ? "#22C55E" : "#D1D5DB",
+                            opacity: isCompleted ? 0.8 : 1,
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex w-full items-center justify-between">
+                      <span
+                        className={`text-sm ${
+                          isActive
+                            ? "font-semibold text-gray-900"
+                            : isCompleted
+                            ? "text-gray-800"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {meta.label}
+                      </span>
+                      {isActive && (
+                        <span className="text-xs text-gray-600">
+                          {thaiTimeFormatter.format(now)} , {thaiDateFormatter.format(now)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
       </Card>
 
-      <div className="flex flex-col gap-3 md:flex-row">
-        <Button
-          className="rounded-full bg-[#1BC47D] text-white hover:bg-[#18a86a] md:flex-[1.5]"
-          onClick={() => router.push(`/orders/${state.orderId ?? ""}`)}
-        >
-          ดูรายละเอียดคำสั่งซื้อ
-        </Button>
-        <Button
-          variant="outline"
-          className="rounded-full border-[#1BC47D] text-[#1BC47D] hover:bg-[#1BC47D]/10 md:flex-1"
-          onClick={() => setStatus("COMPLETED")}
-          disabled={completed}
-        >
-          {completed ? "ส่งถึงแล้ว" : "อัปเดตสถานะเป็นส่งถึงแล้ว"}
-        </Button>
-        <Button
-          variant="ghost"
-          className="rounded-full text-gray-600 hover:bg-gray-100 md:flex-1"
-          onClick={() => {
-            resetFlow()
-            router.push("/landing_page")
-          }}
+      {/* ปุ่มสำหรับหน้าสรุป (ไม่มี next/previous step เพื่อกันวนลูป) */}
+      <div className="flex flex-col gap-4">
+        {/* แถวแรก: ปุ่มหลัก */}
+        {/* <Button
+          className="w-full rounded-full bg-[#1BC47D] text-white hover:bg-[#18a86a]"
+          onClick={() => router.push("/landing_page")}
         >
           กลับหน้าหลัก
-        </Button>
+        </Button> */}
+
+        {/* แถวสอง: 2 คอลัมน์ */}
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            className="w-full rounded-full border-[#1BC47D] text-[#1BC47D] hover:bg-[#1BC47D]/10"
+            onClick={() => {
+              resetFlow()                   // เคลียร์ state flow
+              router.replace("/order?step=shipping") // เริ่มสั่งใหม่
+            }}
+          >
+            สั่งใหม่
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full rounded-full border-[#1BC47D] text-[#1BC47D] hover:bg-[#1BC47D]/10"
+            onClick={() => router.push(`/order/${state.orderId}?step=status`)}
+          >
+            รีเฟรชสถานะ
+          </Button>
+        </div>
       </div>
     </div>
   )
 }
-

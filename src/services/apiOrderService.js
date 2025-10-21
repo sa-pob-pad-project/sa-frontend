@@ -117,3 +117,17 @@ export async function getDeliveryInfo(params = {}) {
         throw new Error(extractErrorMessage(error, "Failed to get delivery info"))
     }
 }
+
+export async function payOrder(payload) {
+  try {
+    const res = await http.post(`${ORDER_ENDPOINT}/pay`, payload)
+
+    if (res.status === 201 || res.status === 200) {
+      return res.data
+    }
+
+    throw new Error(res.data?.error || `Unexpected status: ${res.status}`)
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to pay order"))
+  }
+}

@@ -215,7 +215,7 @@ export function ShippingStep() {
         return
       }
 
-      setStatus("WAITING_PAYMENT")
+      setStatus("pending")
       nextStep()
     } catch (error) {
       console.error("[order-flow] shipping step submit failed:", error)

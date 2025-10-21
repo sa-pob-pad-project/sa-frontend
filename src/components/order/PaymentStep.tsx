@@ -10,11 +10,28 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { createPaymentAttempt, createPaymentInfo, getPaymentInfoByMethod } from "@/services/apiPaymentService";
-import { getOrderById } from "@/services/apiOrderService";
+import { createPaymentAttempt } from "@/services/apiPaymentService";
+import { getOrderById, payOrder } from "@/services/apiOrderService";
 import { getMedicineById } from "@/services/apiMedicineService";
 
 const PHONE_REGEX = /^0[0-9]{8,9}$/;
+
+function simulateGatewayTokenize(card: {
+  cardNumber: string
+  cardHolder: string
+  expiryDate: string
+  cvv: string
+}): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // ตรวจเบื้องต้นแบบหลวม ๆ (ของจริงไปทำฝั่ง gateway)
+    const num = (card.cardNumber || "").replace(/\s+/g, "")
+    const last4 = num.slice(-4)
+    if (num.length < 12 || !last4) return reject(new Error("บัตรไม่ถูกต้อง"))
+    // สร้างโทเคนจำลอง โดยไม่เก็บข้อมูลบัตรไว้ไหนเลย
+    const token = `tok_${Date.now()}_${last4}`
+    setTimeout(() => resolve(token), 400) // หน่วงนิดให้เหมือน call external
+  })
+}
 
 type Stage =
   | "idle"
@@ -39,18 +56,6 @@ type PaymentInfo = {
   details: unknown // หรือระบุเป็น union ถ้ารู้ schema ชัดเจน
 }
 
-
-function encodeDetails(details: Record<string, string>) {
-  if (typeof window === "undefined" || typeof window.btoa !== "function") {
-    throw new Error("ไม่สามารถเข้ารหัสข้อมูลการชำระเงินได้");
-  }
-  const json = JSON.stringify(details);
-  const ascii = encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, hex) =>
-    String.fromCharCode(parseInt(hex, 16))
-  );
-  return window.btoa(ascii);
-}
-
 export function PaymentStep() {
   const router = useRouter();
   const {
@@ -73,41 +78,6 @@ export function PaymentStep() {
   const [items, setItems] = useState<MergedItem[]>([]);
   const [apiTotal, setApiTotal] = useState<number | undefined>(undefined);
   const priceCacheRef = useRef(new Map<string, { price: number; unit: string | undefined }>());
-
-  useEffect(() => {
-    let cancelled = false
-
-    const method = state.payment.method
-    if (!method) {
-      setPaymentInfo(null)
-      setError(null)
-      setStage("idle")
-      return
-    }
-
-    setStage("validating")
-    setError(null)
-
-    ;(async () => {
-      try {
-        const res = await getPaymentInfoByMethod(method) // e.g. GET /payment?method=...
-        if (cancelled) return
-        setPaymentInfo(res)
-        // ยังไม่เริ่ม flow สร้าง info/attempt → กลับไป idle รอ action ต่อไป
-        setStage("idle")
-      } catch (e: any) {
-        if (cancelled) return
-        setPaymentInfo(null)
-        setError(e?.message ?? "โหลดข้อมูลการชำระเงินล้มเหลว")
-        setStage("error")
-        console.error("Failed to fetch payment info:", e)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [state.payment.method])
 
   useEffect(() => {
     let ignore = false;
@@ -234,59 +204,63 @@ export function PaymentStep() {
     return null;
   };
 
+  // แทนที่ handlePayment เดิมทั้งหมด
   const handlePayment = async () => {
-    setError(null);
-    setStage("validating");
+    setError(null)
+    setStage("validating")
 
-    const validateMsg = validate();
+    const validateMsg = validate()
     if (validateMsg) {
-      setError(validateMsg);
-      setStage("error");
-      return;
+      setError(validateMsg)
+      setStage("error")
+      return
     }
 
     try {
-      setStage("creatingInfo");
+      setStage("creatingAttempt")
 
-      let details: Record<string, string> = {};
+      if (!state.orderId) throw new Error("ไม่พบรหัสคำสั่งซื้อ")
+
+      let gatewayToken = ""
+
       if (paymentMethod === "credit_card") {
-        details = {
-          card_number: card.cardNumber.replace(/\s+/g, ""),
-          card_name: card.cardHolder,
-          expiry_date: card.expiryDate,
+        // 1) ขอ token จาก payment gateway (จำลอง)
+        gatewayToken = await simulateGatewayTokenize({
+          cardNumber: card.cardNumber,
+          cardHolder: card.cardHolder,
+          expiryDate: card.expiryDate,
           cvv: card.cvv,
-        };
+        })
+
+        // 2) ล้างการ์ดออกจาก state/หน่วยความจำทันที
+        setCardDraft({ cardNumber: "", cardHolder: "", expiryDate: "", cvv: "" })
       } else {
-        details = { phone_number: promptpay.phoneNumber.trim() };
+        // promptpay: สมมุติว่า gateway ออก token จากเบอร์ (จริงต้องไปยิง gateway)
+        const phone = (state.payment.promptpay.phoneNumber || "").trim()
+        gatewayToken = `pp_${Date.now()}_${phone.slice(-4)}`
       }
 
-      const encodedDetails = encodeDetails(details);
-      const paymentInfoResponse = await createPaymentInfo({
-        payment_method: paymentMethod,
-        details: encodedDetails,
-      });
-      console.log("[order-flow] Created payment info:", paymentInfoResponse);
-
-      const paymentInfoId = paymentInfoResponse?.payment_info?.id;
-      if (!paymentInfoId) throw new Error("ไม่พบข้อมูลการชำระเงินที่สร้างขึ้น");
-      if (!state.orderId) throw new Error("ไม่พบรหัสคำสั่งซื้อ");
-
-      setStage("creatingAttempt");
-
+      // 3) ส่งเฉพาะ token ไป backend เพื่อสร้าง payment attempt
+      //    ถ้า backend ของคุณยังใช้ฟิลด์ payment_info_id ให้ส่ง token ใส่ไปช่องนี้ก่อน
       await createPaymentAttempt({
         order_id: state.orderId,
-        payment_info_id: paymentInfoId,
-      });
+        payment_info_id: gatewayToken, // หรือใช้ payment_token ถ้า backend รองรับ
+      })
+      setStatus("processing")
 
-      setStatus("PROCESSING");
-      setStage("success");
-      nextStep();
+      await payOrder({
+        order_id: state.orderId
+      })
+      // router.replace(`/order/${state.orderId}?step=result`)
+      setStatus("paid")
+      setStage("success")
+      nextStep()
     } catch (err) {
-      console.error("[order-flow] Payment error:", err);
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการดำเนินการชำระเงิน");
-      setStage("error");
+      console.error("[order-flow] Payment error:", err)
+      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการดำเนินการชำระเงิน")
+      setStage("error")
     }
-  };
+  }
 
   const handleMethodChange = (value: PaymentMethod) => {
     if (stage !== "idle") setStage("idle");

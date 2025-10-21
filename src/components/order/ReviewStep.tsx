@@ -39,8 +39,40 @@ export function ReviewStep() {
   const [items, setItems] = useState<MergedItem[]>([])
   const [apiTotal, setApiTotal] = useState<number | undefined>(undefined)
 
+  const [checkingApprove, setCheckingApprove] = useState(false)
+  const [gateError, setGateError] = useState<string | null>(null)
+
   // cache ราคาเพื่อลดการยิง API ซ้ำ
   const priceCacheRef = useRef(new Map<string, { price: number; unit?: string }>())
+
+  const handleProceedToPayment = async () => {
+    setGateError(null)
+
+    // ไม่มี orderId ก็ไม่ให้ไป
+    if (!state.orderId) {
+      setGateError("ไม่พบรหัสคำสั่งซื้อ")
+      return
+    }
+
+    setCheckingApprove(true)
+    try {
+      const resp = await getOrderById(state.orderId)
+      const status = String(resp?.status || "").toLowerCase()
+
+      // ✅ อนุญาตเฉพาะเมื่อ approved เท่านั้น
+      if (status !== "approved") {
+        setGateError("ยังไม่สามารถชำระเงินได้ — คำสั่งซื้อยังไม่ถูกอนุมัติ")
+        return
+      }
+
+      // ผ่านด่าน → ไป payment
+      nextStep()
+    } catch (e) {
+      setGateError("ตรวจสอบสถานะคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่")
+    } finally {
+      setCheckingApprove(false)
+    }
+  }
 
   useEffect(() => {
     let ignore = false
@@ -234,19 +266,27 @@ export function ReviewStep() {
         </div>
       </Card>
 
+      {gateError && (
+        <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+          {gateError}
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 md:flex-row">
         <Button
           variant="outline"
           className="rounded-full border-[#1BC47D] text-[#1BC47D] hover:bg-[#1BC47D]/10 md:flex-1"
           onClick={() => previousStep()}
+          disabled={checkingApprove}
         >
           กลับไปดูสถานะ
         </Button>
         <Button
           className="rounded-full bg-[#1BC47D] text-white hover:bg-[#18a86a] md:flex-[1.5]"
-          onClick={() => nextStep()}
+          onClick={handleProceedToPayment}
+          disabled={checkingApprove || loading}
         >
-          ไปขั้นตอนชำระเงิน
+          {checkingApprove ? "กำลังตรวจสอบ..." : "ไปขั้นตอนชำระเงิน"}
         </Button>
       </div>
     </div>

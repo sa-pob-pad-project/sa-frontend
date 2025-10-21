@@ -36,6 +36,15 @@ function OrderPageBody() {
   const { state, goToStep } = useOrderFlow()
   const hasSyncedQueryRef = useRef(false)
 
+  const stepParam = (searchParams.get("step") || "shipping") as typeof state.currentStep
+
+  useEffect(() => {
+    if (state.currentStep !== stepParam) {
+      goToStep(stepParam)
+    }
+    // no router.replace() ที่นี่
+  }, [stepParam])
+
   useEffect(() => {
     if (hasSyncedQueryRef.current) return
     const stepParam = searchParams.get("step") as OrderFlowStepId | null

@@ -89,7 +89,7 @@ function OrderPageBody() {
       case "result":
         return <StatusStep />
       default:
-        return <ShippingStep />
+        return <StatusStep />
     }
   }
 

@@ -15,12 +15,23 @@ export interface OrderFlowStepMeta {
 
 
 // ('pending','approved','rejected','paid','processing','shipped','delivered','cancelled');
+// export type OrderTimelineStatus =
+//   | "APPROVED"
+//   | "WAITING_PAYMENT"
+//   | "PROCESSING"
+//   | "SHIPPING"
+//   | "COMPLETED"
+
+// ===== ใช้ค่าตาม backend ตรง ๆ =====
 export type OrderTimelineStatus =
-  | "APPROVED"
-  | "WAITING_PAYMENT"
-  | "PROCESSING"
-  | "SHIPPING"
-  | "COMPLETED"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "paid"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
 
 export interface OrderStatusMeta {
   key: OrderTimelineStatus
@@ -154,31 +165,46 @@ const ORDER_FLOW_STEPS: OrderFlowStepMeta[] = [
   },
 ]
 
-const ORDER_STATUS_SEQUENCE: OrderStatusMeta[] = [
+export const ORDER_STATUS_SEQUENCE: OrderStatusMeta[] = [
   {
-    key: "APPROVED",
+    key: "pending",
+    label: "รอการตรวจสอบ",
+    description: "ระบบกำลังตรวจสอบคำสั่งซื้อนี้",
+  },
+  {
+    key: "approved",
     label: "อนุมัติแล้ว",
     description: "ใบสั่งยาผ่านการอนุมัติจากแพทย์เรียบร้อย",
   },
   {
-    key: "WAITING_PAYMENT",
-    label: "รอชำระเงิน",
-    description: "กรุณาชำระเงินเพื่อให้เริ่มเตรียมยา",
+    key: "paid",
+    label: "ชำระเงินแล้ว",
+    description: "ระบบได้รับการชำระเงินแล้ว เตรียมดำเนินการจัดยา",
   },
   {
-    key: "PROCESSING",
+    key: "processing",
     label: "กำลังดำเนินการ",
     description: "เภสัชกรกำลังจัดเตรียมยาและบรรจุภัณฑ์",
   },
   {
-    key: "SHIPPING",
+    key: "shipped",
     label: "กำลังจัดส่ง",
     description: "พัสดุออกจากคลังแล้วและอยู่ระหว่างจัดส่ง",
   },
   {
-    key: "COMPLETED",
+    key: "delivered",
     label: "ส่งถึงแล้ว",
     description: "ได้รับยาเรียบร้อยแล้ว ขอบคุณที่ใช้บริการ",
+  },
+  {
+    key: "cancelled",
+    label: "คำสั่งซื้อถูกยกเลิก",
+    description: "คำสั่งซื้อนี้ถูกยกเลิกแล้ว",
+  },
+  {
+    key: "rejected",
+    label: "ไม่อนุมัติ",
+    description: "ใบสั่งยานี้ถูกปฏิเสธจากแพทย์หรือระบบ",
   },
 ]
 
@@ -219,7 +245,7 @@ const DEFAULT_STATE: OrderFlowState = {
     },
   },
   orderId: undefined,
-  status: "APPROVED",
+  status: "approved",
 }
 
 function orderFlowReducer(state: OrderFlowState, action: OrderFlowAction): OrderFlowState {
@@ -342,7 +368,7 @@ function orderFlowReducer(state: OrderFlowState, action: OrderFlowAction): Order
           ...DEFAULT_STATE.shipping,
         },
         orderId: undefined,
-        status: "APPROVED",
+        status: "approved",
       }
     }
     default:
