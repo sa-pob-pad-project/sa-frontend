@@ -17,6 +17,7 @@ import {
   updateDeliveryInfo,
   getDeliveryInfo,
 } from "@/services/apiOrderService"
+import { useRouter } from "next/navigation"
 
 type DeliveryInfoRecord = {
   id?: string
@@ -50,14 +51,6 @@ const PHONE_REGEX = /^0[0-9]{8,9}$/
 function extractDeliveryInfo(data: unknown): DeliveryInfoRecord | null {
   if (!data) return null
 
-  // const unwrap = (value: any) => {
-  //   if (!value) return null
-  //   if (Array.isArray(value)) {
-  //     return value.length > 0 ? value[0] : null
-  //   }
-  //   return value
-  // }
-
   const info = (data as any)?.delivery_info 
   if (info && typeof info === "object") {
     return info as DeliveryInfoRecord
@@ -77,6 +70,8 @@ export function ShippingStep() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isFetchingInfo, setIsFetchingInfo] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const router = useRouter()
 
   useEffect(() => {
     let ignore = false
@@ -209,18 +204,15 @@ export function ShippingStep() {
           note: orderNote ?? shipping.note ?? "",
         })
         const newOrderId = orderResponse.order_id
-          // orderResponse?.order_id ??
-          // orderResponse?.orderId ??
-          // orderResponse?.data?.order_id ??
-          // orderResponse?.data?.orderId ??
-          // orderResponse?.id
 
         if (!newOrderId) {
           throw new Error("ไม่พบรหัสคำสั่งซื้อที่สร้างขึ้น")
         }
 
-        console.log("[order-flow] created new order with ID:", newOrderId)
+        // console.log("[order-flow] created new order with ID:", newOrderId)
         setOrderId(newOrderId)
+        router.push(`/order/${newOrderId}?step=status`)
+        return
       }
 
       setStatus("WAITING_PAYMENT")

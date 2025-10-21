@@ -1,29 +1,76 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { useOrderFlow } from "@/contexts/OrderFlowContext"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
+import { getOrderById } from "@/services/apiOrderService"
+import { getDoctorById } from "@/services/apiService"
+
 const STATUS_COLORS: Record<string, string> = {
   APPROVED: "#32C671",
   WAITING_PAYMENT: "#FFC107",
-  PREPARING: "#FF9800",
+  PROCESSING: "#FF9800",   // ✅ ให้ชื่อสถานะสอดคล้องกับ state ของคุณ
   SHIPPING: "#8E44AD",
   COMPLETED: "#E91E63",
 }
 
 export function StatusStep() {
   const router = useRouter()
-  const {
-    state,
-    statusMeta,
-    nextStep,
-    previousStep,
-    setOrderId,
-  } = useOrderFlow()
+  const { state, setStatus, statusMeta, nextStep, previousStep } = useOrderFlow()
+
+  // ✅ local state สำหรับชื่อหมอ (เลี่ยงการแก้ context ตอนนี้)
+  const [doctorName, setDoctorName] = useState<string>(state.doctor?.name || "-")
+
+  // ถ้ายังไม่มี orderId ให้เด้งกลับไปเริ่ม flow
+  useEffect(() => {
+    if (!state.orderId) {
+      router.replace("/order?step=shipping")
+    }
+  }, [state.orderId, router])
+
+  // ดึงสถานะจริง + ดึงชื่อหมอครั้งเดียวเมื่อมี orderId
+  useEffect(() => {
+    if (!state.orderId) return
+    let ignore = false
+
+    const fetchStatusAndDoctor = async () => {
+      try {
+        const res = await getOrderById(state.orderId!)
+        if (!res || ignore) return
+
+        // อัปเดตสถานะ (map ให้ตรง enum ถ้าจำเป็น)
+        if (res.status) setStatus(res.status)
+
+        // ตั้งชื่อหมอจาก state ก่อน ถ้ามี
+        if (state?.doctor?.name) {
+          setDoctorName(state.doctor.name)
+        }
+
+        if (res.doctor_id) {
+          try {
+            const respd = await getDoctorById(res.doctor_id)
+
+            const d = respd[0]
+            if (!ignore && d?.first_name && d?.last_name) {
+              setDoctorName(d.first_name + " " + d.last_name)
+            }
+          } catch (err) {
+            console.warn("[status] fetch doctor failed:", err)
+          }
+        }
+      } catch (e) {
+        if (!ignore) console.warn("[status] fetch failed:", e)
+      }
+    }
+
+    fetchStatusAndDoctor()
+    return () => { ignore = true }
+  }, [state.orderId, state.doctor?.name])
+
 
   const thaiDateFormatter = useMemo(
     () =>
@@ -68,7 +115,7 @@ export function StatusStep() {
         <div className="flex flex-col gap-5 text-sm text-gray-700">
           <div className="space-y-2">
             <p>หมายเลขคำสั่ง : {state.orderId ?? "-"}</p>
-            <p>แพทย์ผู้ดูแล : {state.doctor.name}</p>
+            <p>แพทย์ผู้ดูแล : {doctorName || "-"}</p> {/* ✅ ใช้ local state */}
             <p>วิธีการจัดส่ง : {shippingMethodText}</p>
             <p>สถานะการสั่ง : {currentStatusMeta?.label ?? "-"}</p>
             <p>
@@ -155,4 +202,3 @@ export function StatusStep() {
     </div>
   )
 }
-

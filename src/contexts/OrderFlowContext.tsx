@@ -13,10 +13,12 @@ export interface OrderFlowStepMeta {
   description?: string
 }
 
+
+// ('pending','approved','rejected','paid','processing','shipped','delivered','cancelled');
 export type OrderTimelineStatus =
   | "APPROVED"
   | "WAITING_PAYMENT"
-  | "PREPARING"
+  | "PROCESSING"
   | "SHIPPING"
   | "COMPLETED"
 
@@ -164,8 +166,8 @@ const ORDER_STATUS_SEQUENCE: OrderStatusMeta[] = [
     description: "กรุณาชำระเงินเพื่อให้เริ่มเตรียมยา",
   },
   {
-    key: "PREPARING",
-    label: "เตรียมจัดส่ง",
+    key: "PROCESSING",
+    label: "กำลังดำเนินการ",
     description: "เภสัชกรกำลังจัดเตรียมยาและบรรจุภัณฑ์",
   },
   {
@@ -419,61 +421,80 @@ export function OrderFlowProvider({ children, initialOrderId, initialStep }: Pro
   const memoisedMeta = useMemo(() => ORDER_FLOW_STEPS, [])
   const memoisedStatusMeta = useMemo(() => ORDER_STATUS_SEQUENCE, [])
 
-  // --- 2) bootstrap จาก URL: ตั้ง orderId/step ครั้งเดียว แล้วโหลดออเดอร์จาก API ---
-  const bootRef = useRef(false)
+  // --- 2) bootstrap + react to URL changes: orderId & step ---
   useEffect(() => {
-    if (bootRef.current) return
-    bootRef.current = true
-
-    // ถ้ามี initialStep ให้ตั้ง step เลย (ทับ state ที่กู้จาก session)
-    if (initialStep) {
+    // sync step จาก URL ทุกครั้งที่ initialStep เปลี่ยน
+    if (initialStep && initialStep !== state.currentStep) {
       dispatch({ type: "GO_TO_STEP", payload: { step: initialStep } })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialStep])
 
-    // ถ้ามี order_id จาก URL → ตั้ง orderId แล้วดึงข้อมูลจาก API
-    if (initialOrderId) {
-      // ถ้า state มี orderId คนละอัน ให้ reset ก่อน เพื่อกันซาก state เดิม
-      if (state.orderId && state.orderId !== initialOrderId) {
-        dispatch({ type: "RESET_FLOW" })
-      }
-      dispatch({ type: "SET_ORDER_ID", payload: initialOrderId })
+  const lastReqRef = useRef<symbol | null>(null)
 
-      ;(async () => {
-        try {
-          const resp = await getOrderById(initialOrderId)
-          const ord = Array.isArray(resp?.orders) ? resp.orders[0] : null
-          if (!ord) return
-
-          // map API → state ภายใน
-          // - items: ใช้เฉพาะ id/name/quantity ที่ backend ให้มา
-          //   (ราคาจะไปดึงใน ReviewStep ด้วย getMedicineById ตามที่เราเซ็ตไว้แล้ว)
-          const items = (ord.order_items ?? []).map((x: any) => ({
-            id: String(x.medicine_id),
-            name: x.medicine_name,
-            quantity: Number(x.quantity ?? 0),
-            // price/dosage/unit ปล่อยว่างไว้, ให้ ReviewStep ดึงราคาเอง
-          }))
-
-          if (items.length) {
-            dispatch({ type: "SET_ITEMS", payload: items })
-          }
-          if (ord.status) {
-            dispatch({ type: "SET_STATUS", payload: ord.status })
-          }
-          if (ord.note) {
-            dispatch({ type: "SET_NOTE", payload: ord.note })
-          }
-
-          // ถ้าต้องการเซ็ต shipping จาก API ด้วย ก็เติม mapping ที่นี่
-          // เช่น dispatch({ type: "SET_SHIPPING", payload: { method: ... } })
-        } catch (e) {
-          // เงียบ ๆ ไปก่อน หรือจะ log ก็ได้
-          // console.warn("[order-flow] bootstrap getOrderById failed", e)
+  useEffect(() => {
+    if (!initialOrderId) {
+      dispatch({ type: "RESET_FLOW" })
+      dispatch({ type: "SET_ORDER_ID", payload: undefined })
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.removeItem(ORDER_FLOW_STORAGE_KEY)
         }
-      })()
+      } catch {}
+      return
     }
+
+    // ถ้า orderId ใน state ไม่ตรงกับ URL → reset flow ก่อน
+    if (state.orderId !== initialOrderId) {
+      dispatch({ type: "RESET_FLOW" })
+      dispatch({ type: "SET_ORDER_ID", payload: initialOrderId })
+    }
+
+    // กัน response เก่าทับใหม่ (เช่น user สลับ order ไว ๆ)
+    const reqId = Symbol("getOrderById")
+    lastReqRef.current = reqId
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const resp = await getOrderById(initialOrderId)
+        if (cancelled || lastReqRef.current !== reqId) return
+
+        const ord = Array.isArray(resp?.orders) ? resp.orders[0] : null
+        if (!ord) return
+
+        const items = (ord.order_items ?? []).map((x: any) => ({
+          id: String(x.medicine_id),
+          name: x.medicine_name,
+          quantity: Number(x.quantity ?? 0),
+        }))
+
+        if (items.length) {
+          dispatch({ type: "SET_ITEMS", payload: items })
+        }
+        if (ord.status) {
+          // แปลงเป็นชนิดในแอปถ้าจำเป็น เช่น APPROVED/WAITING_PAYMENT/...
+          dispatch({ type: "SET_STATUS", payload: ord.status })
+        }
+        if (ord.note) {
+          dispatch({ type: "SET_NOTE", payload: ord.note })
+        }
+
+        // ถ้าจะ map shipping จาก API ก็ dispatch เพิ่มตรงนี้
+        // dispatch({ type: "SET_SHIPPING", payload: {...} })
+      } catch (_e) {
+        // จะ log ก็ได้ ตามสะดวก
+        // console.warn("[order-flow] getOrderById failed", _e)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  // ใส่ deps เท่าที่จำเป็น เพื่อไม่ยิงซ้ำโดยไม่ตั้งใจ
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialOrderId, initialStep])
+  }, [initialOrderId])
+
 
   const value = useMemo<OrderFlowContextValue>(() => ({
     state,

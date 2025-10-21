@@ -59,3 +59,16 @@ function calculateAge(birthDate) {
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
     return age;
 }
+
+export async function getDoctorById(doctorId) {
+    try {
+        const res = await http.post("/user/v1/doctors", { doctor_ids: [doctorId] });
+        if (res.status === 201 || res.status === 200) {
+        return res.data
+        }
+
+        throw new Error(res.data?.error || `Unexpected status: ${res.status}`)
+    } catch (error) {
+        throw new Error(extractErrorMessage(error, "Failed to get doctor info"))
+    }
+}

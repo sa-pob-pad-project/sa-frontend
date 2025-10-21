@@ -278,7 +278,7 @@ export function PaymentStep() {
         payment_info_id: paymentInfoId,
       });
 
-      setStatus("PREPARING");
+      setStatus("PROCESSING");
       setStage("success");
       nextStep();
     } catch (err) {
