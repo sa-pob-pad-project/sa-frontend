@@ -185,7 +185,7 @@ export default function BookingPage() {
       <div className="pt-[70px]" />
 
   
-      <section className="bg-[#D1FAE5] w-full rounded-2xl shadow p-6 flex flex-col sm:flex-row gap-5 items-center">
+      <section className="bg-[#D1FAE5] w-full rounded-2xl shadow p-6 flex flex-col sm:flex-row gap-5 items-center relative z-10">
         <div className="flex-1 text-gray-800 w-full">
           <label className="font-semibold text-lg block mb-2">เลือกคุณหมอ</label>
           {loadingDoctors ? (
@@ -207,7 +207,7 @@ export default function BookingPage() {
                   setTimeSlots([]);
                 }
               }}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white text-gray-700 cursor-pointer hover:border-green-400 transition"
             >
               <option value="">-- กรุณาเลือกหมอ --</option>
               {doctors.map(d => (
