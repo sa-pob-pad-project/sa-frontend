@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "./calendar-custom.css";
@@ -137,12 +138,12 @@ export default function BookingPage() {
  
   const handleConfirm = async () => {
     if (!selectedDoctor || !selectedDate || !selectedSlot) {
-      alert("กรุณาเลือกหมอ วันที่ และเวลาให้ครบ");
+      toast.error("กรุณาเลือกหมอ วันที่ และเวลาให้ครบ");
       return;
     }
 
     if (selectedSlot.status !== "available") {
-      alert("ช่วงเวลานี้ไม่พร้อมให้บริการ กรุณาเลือกช่วงเวลาอื่น");
+      toast.error("ช่วงเวลานี้ไม่พร้อมให้บริการ กรุณาเลือกช่วงเวลาอื่น");
       return;
     }
 
@@ -156,11 +157,11 @@ export default function BookingPage() {
 
       await BookAppointment(selectedDoctor.id, startTimeISO);
 
-      alert(`จองนัดสำเร็จ!\nหมอ: ${selectedDoctor.first_name} ${selectedDoctor.last_name}\nวันที่: ${selectedDate.toDateString()}\nเวลา: ${formatSlotRange(selectedSlot)}`);
+      toast.success(`จองนัดสำเร็จ!\nหมอ: ${selectedDoctor.first_name} ${selectedDoctor.last_name}\nวันที่: ${selectedDate.toDateString()}\nเวลา: ${formatSlotRange(selectedSlot)}`);
       router.push("/landing_page/history_app");
     } catch (error) {
       console.error("Booking failed:", error);
-      alert("เกิดข้อผิดพลาดในการจองนัด กรุณาลองใหม่");
+      toast.error("เกิดข้อผิดพลาดในการจองนัด กรุณาลองใหม่");
     }
   };
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, BellOff, MoreHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { LastestAppointment, HistoryAppointment, CancelAppointment } from "@/services/appointmentService";
 import Image from "next/image";
 
@@ -42,6 +43,7 @@ export default function AppointmentsPage() {
         setPastAppointments(historyRes || []);
       } catch (err: any) {
         console.error(err);
+        toast.error("ไม่สามารถโหลดข้อมูลการนัดหมายได้");
         setError("ไม่สามารถโหลดข้อมูลการนัดหมายได้");
       } finally {
         setLoading(false);
@@ -53,7 +55,7 @@ export default function AppointmentsPage() {
 
   const handleCancelAppointment = async () => {
     if (!latest?.id && !latest?.appointment_id) {
-      setError("ไม่พบข้อมูลการนัดหมาย");
+      toast.error("ไม่พบข้อมูลการนัดหมาย");
       return;
     }
 
@@ -64,7 +66,7 @@ export default function AppointmentsPage() {
 
       const appointmentId = latest.id || latest.appointment_id;
       await CancelAppointment(appointmentId);
-      setCancelSuccess("ยกเลิกการนัดหมายสำเร็จ");
+      toast.success("ยกเลิกการนัดหมายสำเร็จ");
       
       // Refresh the appointments list
       const latestRes = await LastestAppointment();
@@ -74,7 +76,7 @@ export default function AppointmentsPage() {
       setPastAppointments(historyRes || []);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "ไม่สามารถยกเลิกการนัดหมายได้");
+      toast.error(err.message || "ไม่สามารถยกเลิกการนัดหมายได้");
     } finally {
       setCancelLoading(false);
     }
