@@ -1,7 +1,7 @@
 import { http } from "@/libs/http";
 
-const PAYMENT_ATTEMPT_ENDPOINT = "/payment/v1/attempt";
-const PAYMENT_INFO_ENDPOINT = "/payment/v1/info";
+const PAYMENT_ATTEMPT_ENDPOINT = "/api/payment/v1/attempt";
+const PAYMENT_INFO_ENDPOINT = "/api/payment/v1/info";
 
 function handlePaymentError(error, fallbackMessage) {
     const response = error?.response;

@@ -1,8 +1,8 @@
 ﻿
 import { http } from "@/libs/http"
 
-const ORDER_ENDPOINT = "/order/v1/orders"
-const DELIVERY_INFO_ENDPOINT = "/delivery-info/v1" // ห้ามแก้ไข path นี้เด็ดขาด
+const ORDER_ENDPOINT = "/api/order/v1/orders"
+const DELIVERY_INFO_ENDPOINT = "/api/delivery-info/v1" // ห้ามแก้ไข path นี้เด็ดขาด
 
 function extractErrorMessage(error, fallback) {
   const response = error?.response
