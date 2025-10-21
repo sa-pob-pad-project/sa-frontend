@@ -25,16 +25,17 @@ export default function LandingPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // 🔹 โหลดข้อมูลโปรไฟล์และนัดหมาย
+  // แยก state สำหรับ error ของแต่ละ API
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [appointmentsError, setAppointmentsError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+      setLoading(true);
 
-        // โหลดข้อมูลโปรไฟล์
+      // 🔹 โหลดข้อมูลโปรไฟล์
+      try {
         const userData = await getProfile();
         if (userData?.first_name && userData?.last_name) {
           setProfile({
@@ -42,23 +43,28 @@ export default function LandingPage() {
             lastName: userData.last_name,
           });
         } else {
-          throw new Error("ไม่พบข้อมูลผู้ใช้");
+          setProfileError("ไม่พบข้อมูลผู้ใช้");
         }
-
-        // โหลดข้อมูลนัดหมายที่จะมาถึง
-        const incoming = await IncomingAppointment();
-        setAppointments(incoming || []);
       } catch (err: any) {
-        console.error(err);
-        setError("เกิดข้อผิดพลาดในการโหลดข้อมูล");
-
+        console.error("Profile API Error:", err);
+        setProfileError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
+        // กรณี Unauthorized
         if (err.message?.includes("Unauthorized")) {
           localStorage.removeItem("token");
           router.push("/login");
         }
-      } finally {
-        setLoading(false);
       }
+
+      // 🔹 โหลดนัดหมายที่จะมาถึง
+      try {
+        const incoming = await IncomingAppointment();
+        setAppointments(incoming || []);
+      } catch (err: any) {
+        console.error("Appointments API Error:", err);
+        setAppointmentsError("ไม่สามารถโหลดนัดหมายได้");
+      }
+
+      setLoading(false);
     };
 
     fetchData();
@@ -67,7 +73,6 @@ export default function LandingPage() {
   const goTo = (path: string) => router.push(path);
   const formatDate = (d: string) => new Date(d).toLocaleString("th-TH");
 
-  // ---------- Loading ----------
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600">
@@ -76,16 +81,6 @@ export default function LandingPage() {
     );
   }
 
-  // ---------- Error ----------
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-600">
-        {error}
-      </div>
-    );
-  }
-
-  // ---------- UI ----------
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#E9FFF2] to-white text-gray-800">
       {/* Navbar */}
@@ -113,7 +108,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          <span className="text-sm text-gray-600">ไม่พบข้อมูลผู้ใช้</span>
+          <span className="text-sm text-red-600">{profileError}</span>
         )}
       </nav>
 
@@ -142,6 +137,10 @@ export default function LandingPage() {
       <section className="max-w-4xl mx-auto px-6 mb-16">
         <h3 className="text-black text-xl font-semibold mb-4">นัดหมายที่จะมาถึง</h3>
 
+        {appointmentsError && (
+          <p className="text-red-600 mb-2">{appointmentsError}</p>
+        )}
+
         {appointments.length > 0 ? (
           <ul className="space-y-4">
             {appointments.map((item, index) => (
@@ -162,7 +161,9 @@ export default function LandingPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-gray-600">ไม่มีนัดหมายที่จะมาถึง</p>
+          <p className="text-gray-600">
+            {appointmentsError ? "" : ""}
+          </p>
         )}
       </section>
 
@@ -185,7 +186,7 @@ function MenuCard({
   return (
     <div
       onClick={onClick}
-      className="bg-[#AFFFD5] text-green-900 py-8 rounded-3xl text-center text-lg font-medium shadow-sm hover:shadow-lg cursor-pointer hover:-translate-y-1 hover:bg-green-200 transition-all duration-200"
+      className="bg-white border border-green-100 text-green-900 py-8 rounded-3xl text-center text-lg font-medium shadow-sm hover:shadow-lg cursor-pointer hover:-translate-y-1 hover:bg-green-200 transition-all duration-200"
     >
       {label}
     </div>

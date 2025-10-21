@@ -106,3 +106,11 @@ export function calculateAge(birthDate) {
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   return age;
 }
+
+export function AllDoctors() {
+  const res = http.get("/api/user/v1/doctors");
+  const data = res.data;
+  if (res.status === 200) return data;
+  else if (res.status === 500) throw new Error(data.error || "Failed to get doctors");
+  else throw new Error(data.error || `Unexpected status: ${res.status}`);  
+}

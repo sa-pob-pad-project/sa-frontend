@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, BellOff, MoreHorizontal } from "lucide-react";
 import { LastestAppointment, HistoryAppointment } from "@/services/appointmentService";
+import Image from "next/image";
 
 type AppointmentData = {
   doctor_first_name: string;
@@ -65,11 +66,11 @@ export default function AppointmentsPage() {
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleString("th-TH");
 
   return (
-    <div className="min-h-screen bg-[#AFFFD5] flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-[#E9FFF2] to-white flex flex-col">
       {/* Navbar */}
       <nav className="bg-white text-black px-4 py-3 flex items-center shadow-md sticky top-0 z-10">
         <button
-          onClick={() => router.push("/landing_page")}
+          onClick={() => router.push("/landing_page")}  
           className="p-2 rounded-full hover:bg-gray-100 transition"
         >
           <ArrowLeft className="w-6 h-6 text-gray-800" />
@@ -103,9 +104,15 @@ export default function AppointmentsPage() {
                   <p className="text-sm text-gray-700 mt-1">แผนก : {latest.specialty}</p>
                   <p className="text-sm text-gray-700 truncate mt-1">สถานะ : {latest.status}</p>
                 </div>
-                <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
-                  No Image
+                <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200">
+                  <Image
+                    src="/images/หมอ.png"
+                    alt="รูปหมอ"
+                    fill
+                    className="object-cover"
+                  />
                 </div>
+                
               </div>
 
               <div className="flex gap-3 px-4 pb-4">
@@ -146,9 +153,14 @@ export default function AppointmentsPage() {
                   key={index}
                   className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition"
                 >
-                  <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-                    No Img
-                  </div>
+                <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200">
+                  <Image
+                    src="/images/หมอ.png"
+                    alt="รูปหมอ"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
                   <div className="flex-1 text-sm">
                     <p className="font-medium">
                       นพ.{item.doctor_first_name} {item.doctor_last_name}
