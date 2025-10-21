@@ -1,6 +1,6 @@
 import { http } from "@/libs/http";
 
-const MEDICINE_ENDPOINT = "/medicine/v1/medicines";
+const MEDICINE_ENDPOINT = "/api/medicine/v1/medicines";
 
 // response example
 // {
