@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, BellOff, MoreHorizontal } from "lucide-react";
-import { LastestAppointment, HistoryAppointment } from "@/services/appointmentService";
+import { LastestAppointment, HistoryAppointment, CancelAppointment } from "@/services/appointmentService";
 import Image from "next/image";
 
 type AppointmentData = {
+  id?: string;
+  appointment_id?: string;
   doctor_first_name: string;
   doctor_last_name: string;
   doctor_id: string;
@@ -22,6 +24,8 @@ export default function AppointmentsPage() {
   const [pastAppointments, setPastAppointments] = useState<AppointmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -46,6 +50,35 @@ export default function AppointmentsPage() {
 
     fetchAppointments();
   }, []);
+
+  const handleCancelAppointment = async () => {
+    if (!latest?.id && !latest?.appointment_id) {
+      setError("ไม่พบข้อมูลการนัดหมาย");
+      return;
+    }
+
+    try {
+      setCancelLoading(true);
+      setCancelSuccess(null);
+      setError(null);
+
+      const appointmentId = latest.id || latest.appointment_id;
+      await CancelAppointment(appointmentId);
+      setCancelSuccess("ยกเลิกการนัดหมายสำเร็จ");
+      
+      // Refresh the appointments list
+      const latestRes = await LastestAppointment();
+      setLatest(latestRes);
+
+      const historyRes = await HistoryAppointment();
+      setPastAppointments(historyRes || []);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "ไม่สามารถยกเลิกการนัดหมายได้");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -81,6 +114,20 @@ export default function AppointmentsPage() {
       </nav>
 
       <main className="flex-1 p-6 space-y-10">
+        {/* Success Message */}
+        {cancelSuccess && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+            {cancelSuccess}
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
         {/* นัดล่าสุด */}
         <section>
           <h2 className="text-lg font-bold mb-3 text-black">สถานะล่าสุด :</h2>
@@ -128,8 +175,8 @@ export default function AppointmentsPage() {
                   {reminderOn ? "แจ้งเตือนเปิดอยู่" : "เปิดการแจ้งเตือน"}
                 </button>
 
-                <button className="py-2 px-4 rounded-full bg-red-600 text-white font-medium hover:bg-red-700 transition">
-                  ยกเลิกนัด
+                <button className="py-2 px-4 rounded-full bg-red-600 text-white font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleCancelAppointment} disabled={cancelLoading}>
+                  {cancelLoading ? "กำลังยกเลิก..." : "ยกเลิกนัด"}
                 </button>
 
                 <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">

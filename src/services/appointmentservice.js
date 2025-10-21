@@ -60,3 +60,16 @@ export async function IncomingAppointment() {
     else if (res.status === 500) throw new Error(data.error || "Internal Server Error");
     else throw new Error(data.error || `Unexpected status: ${res.status}`);
 }
+
+export async function CancelAppointment(appointment_id) {
+    const res = await http.post("/api/appointment/v1/cancel", {
+        appointment_id,
+    });
+    const data = res.data;
+    if (res.status === 200) return data;
+    else if (res.status === 400) throw new Error(data.error || "Bad Request");
+    else if (res.status === 401) throw new Error(data.error || "Unauthorized");
+    else if (res.status === 404) throw new Error(data.error || "Appointment Not Found");
+    else if (res.status === 500) throw new Error(data.error || "Internal Server Error");
+    else throw new Error(data.error || `Unexpected status: ${res.status}`);
+}

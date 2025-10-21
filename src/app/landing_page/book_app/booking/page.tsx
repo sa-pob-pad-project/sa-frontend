@@ -251,7 +251,7 @@ export default function BookingPage() {
           ) : timeSlots.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {timeSlots.map(slot => {
-                const isAvailable = slot.status === "available";
+                const isAvailable = slot.status !== "scheduled" && slot.status !== "unavailable";
                 const isSelected = selectedSlot === slot;
                 return (
                   <button
