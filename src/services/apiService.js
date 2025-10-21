@@ -84,6 +84,17 @@ export async function getID(patient_data) {
   else throw new Error(data.error || `Unexpected status: ${res.status}`);
 }
 
+export async function getDoctorById(doctorId) {
+    try {
+        const res = await http.post("/user/v1/doctors", { doctor_ids: [doctorId] });
+        if (res.status === 201 || res.status === 200) {
+        return res.data
+        }
+
+        throw new Error(res.data?.error || `Unexpected status: ${res.status}`)
+    } catch (error) {
+        throw new Error(extractErrorMessage(error, "Failed to get doctor info"))
+    }
 /* ===================== LATEST ORDER ===================== */
 export async function latestOrder() {
   const res = await http.get("/api/order/v1/orders/latest");
