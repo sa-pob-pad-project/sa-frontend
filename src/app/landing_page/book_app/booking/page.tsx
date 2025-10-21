@@ -24,7 +24,7 @@ interface Slot {
 export default function BookingPage() {
   const router = useRouter();
 
-  // --- STATES ---
+
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -34,7 +34,7 @@ export default function BookingPage() {
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // ------------------- FETCH ALL DOCTORS -------------------
+  
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
@@ -51,7 +51,7 @@ export default function BookingPage() {
     fetchDoctors();
   }, []);
 
-  // ------------------- HANDLE DATE CHANGE -------------------
+
   const handleDateChange = async (date: Date) => {
     setSelectedDate(date);
     setSelectedTime(null);
@@ -80,7 +80,7 @@ export default function BookingPage() {
     }
   };
 
-  // ------------------- HANDLE BOOKING -------------------
+ 
   const handleConfirm = async () => {
     if (!selectedDoctor || !selectedDate || !selectedTime) {
       alert("กรุณาเลือกหมอ วันที่ และเวลาให้ครบ");
@@ -88,7 +88,7 @@ export default function BookingPage() {
     }
 
     try {
-      // สร้าง start_time สำหรับ POST
+  
       const startTimeISO = `${selectedDate.toISOString().split("T")[0]}T${selectedTime.split(" - ")[0]}:00`;
 
       await BookAppointment({
@@ -104,7 +104,7 @@ export default function BookingPage() {
     }
   };
 
-  // ------------------- FORMAT DATE -------------------
+
   const formatDate = (date: Date) => {
     const thaiMonths = [
       "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
@@ -115,7 +115,7 @@ export default function BookingPage() {
 
   return (
     <main className="min-h-screen bg-[#F9FFFB] flex flex-col items-center py-6 px-4 sm:px-6">
-      {/* HEADER */}
+  
       <header className="fixed top-0 left-0 w-full bg-white shadow-md px-4 py-3 flex items-center z-20">
         <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition">
           <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
@@ -124,7 +124,7 @@ export default function BookingPage() {
       </header>
       <div className="pt-[70px]" />
 
-      {/* SELECT DOCTOR */}
+  
       <section className="bg-[#D1FAE5] w-full rounded-2xl shadow p-6 flex flex-col sm:flex-row gap-5 items-center">
         <div className="flex-1 text-gray-800 w-full">
           <label className="font-semibold text-lg block mb-2">เลือกคุณหมอ</label>
@@ -153,7 +153,6 @@ export default function BookingPage() {
         </div>
       </section>
 
-      {/* CALENDAR */}
       {selectedDoctor && (
         <section className="bg-white w-full mt-6 rounded-2xl shadow p-6">
           <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">เลือกวันที่ต้องการ</h2>
@@ -169,7 +168,7 @@ export default function BookingPage() {
         </section>
       )}
 
-      {/* TIME SLOTS */}
+
       {selectedDate && (
         <section className="bg-white w-full mt-6 rounded-2xl shadow p-6">
           <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">เลือกเวลาที่สะดวก</h2>
@@ -197,7 +196,7 @@ export default function BookingPage() {
         </section>
       )}
 
-      {/* SUMMARY */}
+  
       {selectedDoctor && selectedDate && selectedTime && (
         <section className="bg-[#D1FAE5] w-full mt-6 rounded-2xl shadow p-6">
           <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">สรุปการนัดหมาย</h2>
@@ -213,7 +212,7 @@ export default function BookingPage() {
         </section>
       )}
 
-      {/* CONFIRM BUTTON */}
+
       <button
         onClick={handleConfirm}
         className="mt-6 w-full bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold py-3 rounded-lg transition shadow-md"

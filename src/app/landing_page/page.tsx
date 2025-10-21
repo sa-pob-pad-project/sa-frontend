@@ -26,7 +26,7 @@ export default function LandingPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // แยก state สำหรับ error ของแต่ละ API
+
   const [profileError, setProfileError] = useState<string | null>(null);
   const [appointmentsError, setAppointmentsError] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export default function LandingPage() {
     const fetchData = async () => {
       setLoading(true);
 
-      // 🔹 โหลดข้อมูลโปรไฟล์
+    
       try {
         const userData = await getProfile();
         if (userData?.first_name && userData?.last_name) {
@@ -48,14 +48,14 @@ export default function LandingPage() {
       } catch (err: any) {
         console.error("Profile API Error:", err);
         setProfileError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
-        // กรณี Unauthorized
+       
         if (err.message?.includes("Unauthorized")) {
           localStorage.removeItem("token");
           router.push("/login");
         }
       }
 
-      // 🔹 โหลดนัดหมายที่จะมาถึง
+  
       try {
         const incoming = await IncomingAppointment();
         setAppointments(incoming || []);
@@ -83,7 +83,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#E9FFF2] to-white text-gray-800">
-      {/* Navbar */}
+ 
       <nav className="bg-[#AFFFD5]/90 backdrop-blur-md px-6 py-4 flex justify-between items-center shadow-md sticky top-0  z-10">
         <h1
           onClick={() => goTo("/landing_page")}
@@ -112,7 +112,7 @@ export default function LandingPage() {
         )}
       </nav>
 
-      {/* Header */}
+  
       <header className="text-center mt-10 mb-8">
         <h2 className="text-3xl md:text-4xl font-bold text-black mb-2">
           ยินดีต้อนรับ
@@ -122,7 +122,7 @@ export default function LandingPage() {
         </p>
       </header>
 
-      {/* Menu Section */}
+   
       <section className="max-w-5xl mx-auto px-6 mb-14">
         <h3 className="text-black text-xl font-semibold mb-5">เมนูหลัก</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
@@ -133,7 +133,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Upcoming Appointments */}
       <section className="max-w-4xl mx-auto px-6 mb-16">
         <h3 className="text-black text-xl font-semibold mb-4">นัดหมายที่จะมาถึง</h3>
 
@@ -167,7 +166,7 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* Footer */}
+
       <footer className="text-center text-sm text-gray-500 pb-6">
         © 2025 ระบบนัดหมอ | พัฒนาโดยทีมงานคุณภาพวิศวะคอมสุดหล่อ :3
       </footer>
@@ -175,7 +174,7 @@ export default function LandingPage() {
   );
 }
 
-/* ---------- MenuCard Component ---------- */
+
 function MenuCard({
   label,
   onClick,
