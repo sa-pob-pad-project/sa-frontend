@@ -6,7 +6,8 @@ export const API_BASE_URL =
 
 
 export async function AppointmentSlots(doctor_id) {
-    const res = await http.get("/api/appointment/v1/doctor/{doctor_id}/slots", doctor_id);
+    console.log("doctorID", doctor_id)
+    const res = await http.get(`/api/appointment/v1/doctor/${doctor_id}/slots`);
     const data = res.data;
     if (res.status === 200) return data;
     else if (res.status === 400) throw new Error(data.error || "Bad Request");

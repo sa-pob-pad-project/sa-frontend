@@ -107,8 +107,8 @@ export function calculateAge(birthDate) {
   return age;
 }
 
-export function AllDoctors() {
-  const res = http.get("/api/user/v1/doctors");
+export async function AllDoctors() {
+  const res = await http.get("/api/user/v1/doctors");
   const data = res.data;
   if (res.status === 200) return data;
   else if (res.status === 500) throw new Error(data.error || "Failed to get doctors");

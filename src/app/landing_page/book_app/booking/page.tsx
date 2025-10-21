@@ -8,6 +8,7 @@ import "react-calendar/dist/Calendar.css";
 import "./calendar-custom.css";
 import { AllDoctors } from "@/services/apiService";
 import { AppointmentSlots, BookAppointment } from "@/services/appointmentService";
+import { DateTime } from "luxon";
 
 interface Doctor {
   id: string;
@@ -16,11 +17,14 @@ interface Doctor {
   specialty: string;
 }
 
-interface Slot {
-  start_time: string;
-  end_time: string;
+interface DoctorSlot {
+  [key: string]: {
+    doctor_id: string;
+    end_time: string;
+    start_time: string;
+    status: string;
+  }[];
 }
-
 export default function BookingPage() {
   const router = useRouter();
 
@@ -30,6 +34,7 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [slotMap, setSlotMap] = useState<Map<string, any[]>>(new Map());
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -52,32 +57,52 @@ export default function BookingPage() {
   }, []);
 
 
-  const handleDateChange = async (date: Date) => {
-    setSelectedDate(date);
-    setSelectedTime(null);
-    if (!selectedDoctor) return;
-
+  const fetchDoctorSlots = async (doctorId: string) => {
     setLoadingSlots(true);
     try {
-      const dateStr = date.toISOString().split("T")[0];
-      const slots: Slot[] = await AppointmentSlots({
-        doctorId: selectedDoctor.id,
-        date: dateStr,
+      const slots: DoctorSlot = await AppointmentSlots(doctorId);
+      
+      // Convert object keys (date strings) to a Map for easier lookup
+      const slotsKeys = Object.keys(slots);
+      const newSlotMap = new Map<string, any[]>();
+      
+      slotsKeys.forEach(key => {
+        newSlotMap.set(key, slots[key]);
       });
-
-      const formattedSlots = slots.map(slot => {
-        const start = new Date(slot.start_time).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
-        const end = new Date(slot.end_time).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
-        return `${start} - ${end}`;
-      });
-
-      setTimeSlots(formattedSlots);
+      
+      console.log('slotMap', newSlotMap);
+      setSlotMap(newSlotMap);
+      setTimeSlots([]);
     } catch (error) {
       console.error("Error fetching slots:", error);
+      setSlotMap(new Map());
       setTimeSlots([]);
     } finally {
       setLoadingSlots(false);
     }
+  };
+
+  const handleDateChange = async (date: Date) => {
+    setSelectedDate(date);
+    setSelectedTime(null);
+
+    // Convert selected date to date string format (YYYY-MM-DD)
+    const dateStr = date.toISOString().split("T")[0];
+    
+    // Get slots for the selected date from slotMap
+    const slotsForDate = slotMap.get(dateStr) || [];
+    
+    // Format the time slots
+    const formattedSlots = slotsForDate.map((slot: any) => {
+      const rawStart = slot.start_time.replace('Z00:00', '');
+      const rawEnd = slot.end_time.replace('Z00:00', '');
+      const start = DateTime.fromFormat(rawStart, "HH:mm").toFormat("HH:mm");
+      const end = DateTime.fromFormat(rawEnd, "HH:mm").toFormat("HH:mm");
+      return `${start} - ${end}`;
+    });
+    
+    console.log('formattedSlots for', dateStr, formattedSlots);
+    setTimeSlots(formattedSlots);
   };
 
  
@@ -91,10 +116,10 @@ export default function BookingPage() {
   
       const startTimeISO = `${selectedDate.toISOString().split("T")[0]}T${selectedTime.split(" - ")[0]}:00`;
 
-      await BookAppointment({
-        doctor_id: selectedDoctor.id,
-        start_time: startTimeISO,
-      });
+      await BookAppointment(
+        selectedDoctor.id,
+        startTimeISO,
+      );
 
       alert(`จองนัดสำเร็จ!\nหมอ: ${selectedDoctor.first_name} ${selectedDoctor.last_name}\nวันที่: ${selectedDate.toDateString()}\nเวลา: ${selectedTime}`);
       router.push("/landing_page/history_app");
@@ -138,7 +163,11 @@ export default function BookingPage() {
                 setSelectedDoctor(doctor);
                 setSelectedDate(null);
                 setSelectedTime(null);
-                setTimeSlots([]);
+                if (doctor) {
+                  fetchDoctorSlots(doctor.id);
+                } else {
+                  setTimeSlots([]);
+                }
               }}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
             >
