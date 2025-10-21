@@ -1,163 +1,308 @@
 "use client";
 
-import { useState } from "react";
-import axios from "axios";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import "./calendar-custom.css"; // 🔹 เพิ่ม custom style
+import "./calendar-custom.css";
+import { AllDoctors } from "@/services/apiService";
+import { AppointmentSlots, BookAppointment } from "@/services/appointmentService";
+import { DateTime } from "luxon";
+
+interface Doctor {
+  id: string;
+  first_name: string;
+  last_name: string;
+  specialty: string;
+}
+
+interface AppointmentSlotResponse {
+  [key: string]: {
+    doctor_id: string;
+    end_time: string;
+    start_time: string;
+    status: string;
+  }[];
+}
+
+interface SlotDetail {
+  doctor_id: string;
+  end_time: string;
+  start_time: string;
+  status: string;
+}
+
+const sanitizeSlotTime = (time: string) => time.replace("Z00:00", "").trim();
+
+const formatSlotRange = (slot: SlotDetail) => {
+  const start = DateTime.fromFormat(sanitizeSlotTime(slot.start_time), "HH:mm").toFormat("HH:mm");
+  const end = DateTime.fromFormat(sanitizeSlotTime(slot.end_time), "HH:mm").toFormat("HH:mm");
+  return `${start} - ${end}`;
+};
 
 export default function BookingPage() {
   const router = useRouter();
 
-  // 🔹 Mock ข้อมูลหมอ (ต่อ API ได้ภายหลัง)
-  const doctor = {
-    name: "นพ.เก่ง เกิน",
-    specialty: "หมอแผนกทั่วไป",
-    hospital: "โรงพยาบาลวิศวะคอมเกษตรศาสตร์",
-   // image: "/images/doctor.png",
+
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [timeSlots, setTimeSlots] = useState<SlotDetail[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<SlotDetail | null>(null);
+  const [slotMap, setSlotMap] = useState<Map<string, SlotDetail[]>>(new Map());
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  const availableDateSet = useMemo(() => new Set(availableDates), [availableDates]);
+
+  
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        setLoadingDoctors(true);
+        const doctorsRes = await AllDoctors();
+        setDoctors(doctorsRes);
+      } catch (error) {
+        console.error("Error fetching doctors:", error);
+        setDoctors([]);
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+    fetchDoctors();
+  }, []);
+
+
+  const fetchDoctorSlots = async (doctorId: string) => {
+    setLoadingSlots(true);
+    try {
+      const slots: AppointmentSlotResponse = await AppointmentSlots(doctorId);
+      
+      // Convert object keys (date strings) to a Map for easier lookup
+      const slotsKeys = Object.keys(slots);
+      const newSlotMap = new Map<string, SlotDetail[]>();
+      const normalizedDates: string[] = [];
+
+      slotsKeys.forEach((key) => {
+        try {
+          // Parse the ISO date with timezone and extract just the date part
+          const dt = DateTime.fromISO(key);
+          const normalizedKey = dt.toISODate();
+          
+          if (normalizedKey) {
+            newSlotMap.set(normalizedKey, slots[key]);
+            normalizedDates.push(normalizedKey);
+          } else {
+            console.warn("Invalid slot date key:", key);
+          }
+        } catch (err) {
+          console.warn("Error parsing slot date key:", key, err);
+        }
+      });
+      
+      setSlotMap(newSlotMap);
+      setAvailableDates(Array.from(new Set(normalizedDates)));
+      setSelectedDate(null);
+      setSelectedSlot(null);
+      setTimeSlots([]);
+    } catch (error) {
+      console.error("Error fetching slots:", error);
+      setSlotMap(new Map<string, SlotDetail[]>());
+      setAvailableDates([]);
+      setSelectedDate(null);
+      setSelectedSlot(null);
+      setTimeSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
   };
 
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedSlot(null);
 
-  const timeSlots = [
-    "9:00–9:30",
-    "10:00–10:30",
-    "11:00–11:30",
-    "13:00–13:30",
-    "14:00–14:30",
-    "15:00–15:30",
-  ];
+    const dateStr = DateTime.fromJSDate(date).toISODate();
+    if (!dateStr) {
+      setTimeSlots([]);
+      return;
+    }
 
+    const slotsForDate = slotMap.get(dateStr) || [];
+    setTimeSlots(slotsForDate);
+  };
+
+ 
   const handleConfirm = async () => {
-    if (!selectedDate || !selectedTime) {
-      alert("กรุณาเลือกวันที่และเวลา");
+    if (!selectedDoctor || !selectedDate || !selectedSlot) {
+      toast.error("กรุณาเลือกหมอ วันที่ และเวลาให้ครบ");
+      return;
+    }
+
+    if (selectedSlot.status !== "available") {
+      toast.error("ช่วงเวลานี้ไม่พร้อมให้บริการ กรุณาเลือกช่วงเวลาอื่น");
       return;
     }
 
     try {
-      await axios.post("/api/booking", {
-        doctorId: 1,
-        date: selectedDate,
-        time: selectedTime,
-      });
-      alert("จองนัดสำเร็จ!");
+      const appointmentDate = DateTime.fromJSDate(selectedDate).toISODate();
+      if (!appointmentDate) {
+        throw new Error("Invalid appointment date");
+      }
+
+      const startTimeISO = `${appointmentDate}T${sanitizeSlotTime(selectedSlot.start_time)}:00.000Z`;
+
+      await BookAppointment(selectedDoctor.id, startTimeISO);
+
+      toast.success(`จองนัดสำเร็จ!\nหมอ: ${selectedDoctor.first_name} ${selectedDoctor.last_name}\nวันที่: ${selectedDate.toDateString()}\nเวลา: ${formatSlotRange(selectedSlot)}`);
+      router.push("/landing_page/history_app");
     } catch (error) {
-      console.error(error);
-      alert("เกิดข้อผิดพลาดในการจอง");
+      console.error("Booking failed:", error);
+      toast.error("เกิดข้อผิดพลาดในการจองนัด กรุณาลองใหม่");
     }
   };
 
+
   const formatDate = (date: Date) => {
     const thaiMonths = [
-      "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-      "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+      "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+      "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"
     ];
-    const day = date.getDate();
-    const month = thaiMonths[date.getMonth()];
-    const year = date.getFullYear() + 543;
-    return `${day} ${month} ${year}`;
+    return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
   };
 
   return (
     <main className="min-h-screen bg-[#F9FFFB] flex flex-col items-center py-6 px-4 sm:px-6">
-      {/* Header */}
-        <header className="fixed top-0 left-0 w-full bg-white shadow-md px-4 py-3 flex items-center z-20">
-          <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-full transition"
-          >
-            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
-          </button>
-          <h1 className="flex-1 text-center text-xl font-bold text-black">
-            นัดหมายคุณหมอ
-          </h1>
-        </header>
-      <div className="pt-[70px]" /> {/* เพิ่มช่องว่างกัน header ทับเนื้อหา */}
+  
+      <header className="fixed top-0 left-0 w-full bg-white shadow-md px-4 py-3 flex items-center z-20">
+        <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition">
+          <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
+        </button>
+        <h1 className="flex-1 text-center text-xl font-bold text-black">นัดหมายคุณหมอ</h1>
+      </header>
+      <div className="pt-[70px]" />
 
-
-      {/* Doctor Info */}
-      <section className="bg-[#D1FAE5] w-full max-w-full mt-6 rounded-2xl shadow p-6 flex flex-col sm:flex-row items-center text-center sm:text-left gap-5">
-        <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#16A34A]">
-      <Image 
-        src={"/images/หมอ.png"} 
-        alt="Doctor Image"
-        fill
-        className="object-cover" /> 
-      </div>
-        
-        <div className="text-gray-800">
-          <p className="font-semibold text-lg">{doctor.name}</p>
-          <p className="text-sm text-gray-600">{doctor.specialty}</p>
-          <p className="text-sm text-gray-600">{doctor.hospital}</p>
-        </div>
-      </section>
-
-      {/* Calendar */}
-      <section className="bg-white w-full max-w-full mt-6 rounded-2xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">
-          เลือกวันที่ต้องการ
-        </h2>
-        <div className="flex justify-center">
-          <Calendar
-            onChange={(value) => setSelectedDate(value as Date)}
-            value={selectedDate}
-            minDate={new Date()}
-            locale="th-TH"
-            className="rounded-lg border-0 text-gray-700 text-base"
-          />
-        </div>
-      </section>
-
-      {/* Time Selection */}
-      <section className="bg-white w-full max-w-full mt-6 rounded-2xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">
-          เลือกเวลาที่สะดวก
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {timeSlots.map((time) => (
-            <button
-              key={time}
-              onClick={() => setSelectedTime(time)}
-              className={`py-2 rounded-lg text-sm font-medium transition ${
-                selectedTime === time
-                  ? "bg-[#16A34A] text-white shadow-md"
-                  : "bg-gray-100 text-gray-700 hover:bg-green-100"
-              }`}
+  
+      <section className="bg-[#D1FAE5] w-full rounded-2xl shadow p-6 flex flex-col sm:flex-row gap-5 items-center relative z-10">
+        <div className="flex-1 text-gray-800 w-full">
+          <label className="font-semibold text-lg block mb-2">เลือกคุณหมอ</label>
+          {loadingDoctors ? (
+            <p>กำลังโหลดรายชื่อคุณหมอ...</p>
+          ) : (
+            <select
+              value={selectedDoctor?.id || ""}
+              onChange={(e) => {
+                const doctor = doctors.find(d => d.id === e.target.value) || null;
+                setSelectedDoctor(doctor);
+                setSelectedDate(null);
+                setSelectedSlot(null);
+                setTimeSlots([]);
+                if (doctor) {
+                  fetchDoctorSlots(doctor.id);
+                } else {
+                  setSlotMap(new Map<string, SlotDetail[]>());
+                  setAvailableDates([]);
+                  setTimeSlots([]);
+                }
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white text-gray-700 cursor-pointer hover:border-green-400 transition"
             >
-              {time}
-            </button>
-          ))}
+              <option value="">-- กรุณาเลือกหมอ --</option>
+              {doctors.map(d => (
+                <option key={d.id} value={d.id}>
+                  {`นพ.${d.first_name} ${d.last_name} (${d.specialty})`}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </section>
 
-      {/* Summary */}
-      <section className="bg-[#D1FAE5] w-full max-w-full mt-6 rounded-2xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">
-          สรุปการนัดหมาย
-        </h2>
-        {selectedDate && selectedTime ? (
+      {selectedDoctor && (
+        <section className="bg-white w-full mt-6 rounded-2xl shadow p-6">
+          <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">เลือกวันที่ต้องการ</h2>
+          <div className="flex justify-center">
+            <Calendar
+              onChange={(value) => handleDateChange(value as Date)}
+              value={selectedDate ?? undefined}
+              minDate={new Date()}
+              locale="th-TH"
+              tileDisabled={({ date, view }) => {
+                if (view !== "month") {
+                  return false;
+                }
+                const targetDate = DateTime.fromJSDate(date).toISODate();
+                return !targetDate || !availableDateSet.has(targetDate);
+              }}
+              className="rounded-lg border-0 text-gray-700 text-base"
+            />
+          </div>
+        </section>
+      )}
+
+
+      {selectedDate && (
+        <section className="bg-white w-full mt-6 rounded-2xl shadow p-6">
+          <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">เลือกเวลาที่สะดวก</h2>
+          {loadingSlots ? (
+            <p>กำลังโหลดเวลาว่าง...</p>
+          ) : timeSlots.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {timeSlots.map(slot => {
+                const isAvailable = slot.status === "available";
+                const isSelected = selectedSlot === slot;
+                return (
+                  <button
+                    key={`${slot.start_time}-${slot.end_time}`}
+                    onClick={() => {
+                      if (isAvailable) {
+                        setSelectedSlot(slot);
+                      }
+                    }}
+                    disabled={!isAvailable}
+                    title={isAvailable ? "Select this slot" : "Slot unavailable"}
+                    className={`py-2 rounded-lg text-sm font-medium transition ${
+                      isSelected
+                        ? "bg-[#16A34A] text-white shadow-md"
+                        : isAvailable
+                          ? "bg-gray-100 text-gray-700 hover:bg-green-100"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    {formatSlotRange(slot)}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-600 text-sm">ไม่มีช่วงเวลาว่างในวันนี้</p>
+          )}
+        </section>
+      )}
+
+  
+      {selectedDoctor && selectedDate && selectedSlot && (
+        <section className="bg-[#D1FAE5] w-full mt-6 rounded-2xl shadow p-6">
+          <h2 className="text-lg font-semibold mb-3 text-[#16A34A]">สรุปการนัดหมาย</h2>
           <div className="bg-white rounded-md p-4 text-gray-700 text-sm sm:text-base leading-relaxed">
             <p>
-              พบนายแพทย์ <span className="font-semibold">{doctor.name}</span> ({doctor.specialty})
+              พบนายแพทย์ <span className="font-semibold">{selectedDoctor.first_name} {selectedDoctor.last_name}</span> ({selectedDoctor.specialty})
               <br />
-              วันที่ {formatDate(selectedDate)} เวลา {selectedTime} น.
+              วันที่ {formatDate(selectedDate)} เวลา {formatSlotRange(selectedSlot)} น.
               <br />
-              {doctor.hospital}
+              โรงพยาบาลวิศวะคอมเกษตรศาสตร์
             </p>
           </div>
-        ) : (
-          <p className="text-gray-600 text-sm">ยังไม่ได้เลือกวันและเวลา</p>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* Confirm Button */}
+
       <button
         onClick={handleConfirm}
-        className="mt-6 w-full max-w-full bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold py-3 rounded-lg transition shadow-md"
+        className="mt-6 w-full bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold py-3 rounded-lg transition shadow-md"
       >
         ยืนยันการนัดหมาย
       </button>

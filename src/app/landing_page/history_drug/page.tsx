@@ -1,163 +1,191 @@
 "use client";
 
-import { ArrowLeft, CheckCircle } from "lucide-react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { ArrowLeft, CheckCircle, MoreHorizontal } from "lucide-react";
+import { HistoryOrder } from "@/services/apiorder";
+
+
+type OrderItem = {
+  medicine_id: string;
+  medicine_name: string;
+  quantity: number;
+};
+
+type OrderData = {
+  created_at: string;
+  delivery_at: string;
+  delivery_status: string;
+  doctor_id: string;
+  note: string;
+  order_id: string;
+  order_items: OrderItem[];
+  patient_id: string;
+  reviewed_at: string;
+  status: string;
+  submitted_at: string;
+  total_amount: number;
+  updated_at: string;
+};
 
 export default function PrescriptionHistoryPage() {
   const router = useRouter();
+  const [latestOrder, setLatestOrder] = useState<OrderData | null>(null);
+  const [pastOrders, setPastOrders] = useState<OrderData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const latestOrder = {
-    date: "17 SEP 2568",
-    orderId: "123456789",
-    status: "กำลังดำเนินการ",
-    shipping: "กำลังจัดส่ง",
-    price: 250,
-    qty: 6,
-    image: "/images/ยา.png",
-  };
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const pastOrders = [
-    {
-      date: "17 SEP 2568",
-      orderId: "123456789",
-      status: "ชำระเงินแล้ว",
-      note: "จัดส่งสำเร็จ",
-      completedAt: "20 SEP 2568 เวลา 12:12 น.",
-      price: 250,
-      qty: 6,
-      image: "/images/ยา.png",
-    },
-    {
-      date: "17 SEP 2568",
-      orderId: "123456789",
-      status: "ชำระเงินแล้ว",
-      note: "การรับยาเสร็จสิ้น",
-      completedAt: "20 SEP 2568 เวลา 12:12 น.",
-      price: 250,
-      qty: 6,
-      image: "/images/ยา.png",
-    },
-  ];
+        const res = await HistoryOrder();
+        const orders: OrderData[] = res.orders || [];
+
+        if (orders.length > 0) {
+          setLatestOrder(orders[0]);
+          setPastOrders(orders.slice(1));
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError("ไม่สามารถโหลดข้อมูลการสั่งยาได้");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleString("th-TH", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        กำลังโหลดข้อมูล...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-600">
+        {error}
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-[#C7FFE4] text-gray-900">
-      {/* ✅ Header */}
-      <header className="sticky top-0 z-10 bg-white shadow flex items-center px-4 py-4 sm:px-6">
+    <div className="min-h-screen bg-gradient-to-b from-[#E9FFF2] to-white flex flex-col">
+      {/* Navbar */}
+      <nav className="bg-white text-black px-4 py-3 flex items-center shadow-md sticky top-0 z-10">
         <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 hover:scale-105 transition-transform"
-          aria-label="ย้อนกลับ"
+          onClick={() => router.push("/landing_page")}
+          className="p-2 rounded-full hover:bg-gray-100 transition"
         >
-          <ArrowLeft className="w-6 h-6" />
+          <ArrowLeft className="w-6 h-6 text-gray-800" />
         </button>
-        <h1 className="flex-1 text-center text-xl sm:text-2xl font-bold">
+        <h1 className="flex-1 text-center text-xl sm:text-2xl font-semibold text-gray-800">
           ประวัติการรับยา
         </h1>
-      </header>
+      </nav>
 
-      {/* ✅ Latest Order */}
-      <section className="p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-[#00875A] mb-3">
-          สถานะล่าสุด
-        </h2>
+      <main className="flex-1 p-6 space-y-10">
+        {/* Latest Order */}
+        {latestOrder && (
+          <section>
+            <h2 className="text-lg font-bold mb-3 text-black">สถานะล่าสุด</h2>
 
-        <article
-          className="bg-white rounded-2xl shadow-md p-5 sm:p-6 border border-gray-100 hover:shadow-lg transition-shadow"
-          aria-label="รายการล่าสุด"
-        >
-          <header className="flex justify-between items-start">
-            <div>
-              <p className="font-medium">{latestOrder.date}</p>
-              <p className="text-gray-500 text-sm">{latestOrder.orderId}</p>
-            </div>
-            <span className="text-yellow-600 font-semibold text-sm">
-              {latestOrder.status}
-            </span>
-          </header>
-
-          <p className="mt-3 bg-yellow-100 text-yellow-800 px-3 py-2 rounded-md text-sm font-medium sm:w-auto w-full text-center">
-            {latestOrder.shipping}
-          </p>
-
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-start gap-4">
-            <figure className="relative w-24 h-24 flex-shrink-0">
-              <Image
-                src={latestOrder.image}
-                alt="รูปภาพยา"
-                fill
-                className="object-contain rounded-md"
-              />
-            </figure>
-
-            <div className="flex-1 text-sm">
-              <p>ยา........................................12 เม็ด/แผง</p>
-              <p className="mt-2">
-                {latestOrder.price} บาท × {latestOrder.qty}
-              </p>
-              <footer className="mt-2 border-t pt-2 text-right font-semibold">
-                ทั้งหมด {latestOrder.price} บาท
-              </footer>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      {/* ✅ Past Orders */}
-      <section className="p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-[#00875A] mb-3">
-          ประวัติการสั่งยาที่ผ่านมา
-        </h2>
-
-        <div className="flex flex-col gap-5">
-          {pastOrders.map((order, index) => (
-            <article
-              key={index}
-              className="bg-white rounded-2xl shadow-md p-5 sm:p-6 border border-gray-100 hover:shadow-lg transition-shadow"
-              aria-label={`รายการสั่งยา ${index + 1}`}
-            >
-              <header className="flex justify-between items-start">
+            <article className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-yellow-400 p-4 text-white flex flex-col md:flex-row md:items-center md:justify-between rounded-t-2xl">
                 <div>
-                  <p className="font-medium">{order.date}</p>
-                  <p className="text-gray-500 text-sm">{order.orderId}</p>
+                  <p className="text-xs opacity-80">วันที่สั่ง :</p>
+                  <p className="font-medium">{formatDate(latestOrder.created_at)}</p>
                 </div>
-                <span className="text-green-600 font-semibold text-sm">
-                  {order.status}
-                </span>
-              </header>
-
-              <div className="flex items-center gap-2 mt-3 bg-[#C7FFE4] px-3 py-2 rounded-md text-sm font-medium">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                <span>
-                  {order.note} <br />
-                  {order.completedAt}
-                </span>
               </div>
 
-              <div className="mt-4 flex flex-col sm:flex-row sm:items-start gap-4">
-                <figure className="relative w-24 h-24 flex-shrink-0">
-                  <Image
-                    src={order.image}
-                    alt="รูปภาพยา"
-                    fill
-                    className="object-contain rounded-md"
-                  />
-                </figure>
-
+              <div className="flex items-center gap-4 p-4">
                 <div className="flex-1 text-sm">
-                  <p>ยา........................................12 เม็ด/แผง</p>
-                  <p className="mt-2">
-                    {order.price} บาท × {order.qty}
+                  <p className="font-medium">Order ID: {latestOrder.order_id}</p>
+                  <p className="mt-1">สถานะ: {latestOrder.status}</p>
+                  <p className="mt-1">การจัดส่ง: {latestOrder.delivery_status}</p>
+                  <p className="mt-1">
+                    รวมราคา: {latestOrder.total_amount} บาท
                   </p>
-                  <footer className="mt-2 border-t pt-2 text-right font-semibold">
-                    ทั้งหมด {order.price} บาท
-                  </footer>
+                  <p className="mt-1">
+                    รายการยา: {latestOrder.order_items.map(i => i.medicine_name).join(", ")}
+                  </p>
                 </div>
+                <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200">
+                  <Image
+                    src="/images/ยา.png"
+                    alt="ยาครั้งล่าสุด"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 px-4 pb-4">
+                <button className="py-2 px-4 rounded-full bg-red-600 text-white font-medium hover:bg-red-700 transition">
+                  ยกเลิกคำสั่ง
+                </button>
+
+                <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">
+                  <MoreHorizontal className="w-5 h-5 text-gray-600" />
+                </button>
               </div>
             </article>
-          ))}
-        </div>
-      </section>
-    </main>
+          </section>
+        )}
+
+        {/* Past Orders */}
+        {pastOrders.length > 0 && (
+          <section>
+            <h2 className="text-lg font-bold mb-3 text-black">ประวัติการสั่งยาที่ผ่านมา</h2>
+
+            <ul className="space-y-4">
+              {pastOrders.map((order, index) => (
+                <li
+                  key={index}
+                  className="bg-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-start gap-4 shadow-sm hover:shadow-md transition"
+                >
+                  <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                    No Img
+                  </div>
+                  <div className="flex-1 text-sm">
+                    <p className="font-medium">Order ID: {order.order_id}</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      วันที่สั่ง: {formatDate(order.created_at)}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">สถานะ: {order.status}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-600">
+                      รวมราคา: {order.total_amount} บาท
+                    </p>
+                    <p className="mt-1 text-xs text-gray-600">
+                      รายการยา: {order.order_items.map(i => i.medicine_name).join(", ")}
+                    </p>
+                  </div>
+                  <button className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">
+                    <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </main>
+    </div>
   );
 }
