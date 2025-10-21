@@ -197,7 +197,7 @@ export default function CheckRightsPage() {
               ประวัติการนัดพบแพทย์
             </button>
             <button
-              onClick={() => router.push("/landing_page/book_app/buy_drug")}
+              onClick={() => router.push("/order")}
               className="w-full bg-green-600 text-white py-3 rounded-2xl hover:bg-green-700 transition-colors"
             >
               สั่งยา
