@@ -86,7 +86,7 @@ export async function getID(patient_data) {
 
 export async function getDoctorById(doctorId) {
     try {
-        const res = await http.post("/user/v1/doctors", { doctor_ids: [doctorId] });
+        const res = await http.post("/api/user/v1/doctors", { doctor_ids: [doctorId] });
         if (res.status === 201 || res.status === 200) {
         return res.data
         }
