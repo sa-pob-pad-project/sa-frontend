@@ -165,25 +165,25 @@ export default function AppointmentsPage() {
               </div>
 
               <div className="flex gap-3 px-4 pb-4">
-                <button
-                  onClick={() => setReminderOn(!reminderOn)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full font-medium transition ${
-                    reminderOn
-                      ? "bg-emerald-500 text-white"
-                      : "bg-emerald-50 text-emerald-800 border border-emerald-600"
-                  }`}
-                >
-                  {reminderOn ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
-                  {reminderOn ? "แจ้งเตือนเปิดอยู่" : "เปิดการแจ้งเตือน"}
-                </button>
+                {latest.status !== "cancelled" && (
+                  <>
+                    <button
+                      onClick={() => setReminderOn(!reminderOn)}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full font-medium transition ${
+                        reminderOn
+                          ? "bg-emerald-500 text-white"
+                          : "bg-emerald-50 text-emerald-800 border border-emerald-600"
+                      }`}
+                    >
+                      {reminderOn ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+                      {reminderOn ? "แจ้งเตือนเปิดอยู่" : "เปิดการแจ้งเตือน"}
+                    </button>
 
-                <button className="py-2 px-4 rounded-full bg-red-600 text-white font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleCancelAppointment} disabled={cancelLoading}>
-                  {cancelLoading ? "กำลังยกเลิก..." : "ยกเลิกนัด"}
-                </button>
-
-                <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">
-                  <MoreHorizontal className="w-5 h-5 text-gray-600" />
-                </button>
+                    <button className="py-2 px-4 rounded-full bg-red-600 text-white font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleCancelAppointment} disabled={cancelLoading}>
+                      {cancelLoading ? "กำลังยกเลิก..." : "ยกเลิกนัด"}
+                    </button>
+                  </>
+                )}
               </div>
             </article>
           ) : (
@@ -219,9 +219,6 @@ export default function AppointmentsPage() {
                       เวลา : {formatDate(item.start_time)} - {formatDate(item.end_time)}
                     </p>
                   </div>
-                  <button className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50 transition">
-                    <MoreHorizontal className="w-4 h-4 text-gray-600" />
-                  </button>
                 </li>
               ))}
             </ul>
