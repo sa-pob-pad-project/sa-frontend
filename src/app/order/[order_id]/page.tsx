@@ -45,6 +45,13 @@ function OrderPageBody() {
   const { state, goToStep } = useOrderFlow()
   const hasSyncedQueryRef = useRef(false)
 
+  // Edge case: ถ้าไม่มี orderId ให้ redirect ไปหน้า landing_page
+  useEffect(() => {
+    if (!state.orderId) {
+      router.replace("/landing_page/history_app")
+    }
+  }, [state.orderId, router])
+
   useEffect(() => {
     if (hasSyncedQueryRef.current) return
     const stepParam = searchParams.get("step") as OrderFlowStepId | null
@@ -99,7 +106,14 @@ function OrderPageBody() {
         <header className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-md">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => {
+              // ถ้าอยู่ step สุดท้าย (result) ให้ไปหน้าประวัติ
+              if (state.currentStep === "result") {
+                router.push("/landing_page/history_app")
+              } else {
+                router.back()
+              }
+            }}
             className="flex items-center rounded-full p-2 text-[#1BC47D] hover:bg-[#1BC47D]/10"
             aria-label="ย้อนกลับ"
           >
