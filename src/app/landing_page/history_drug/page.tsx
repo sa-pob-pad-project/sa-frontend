@@ -114,7 +114,7 @@ export default function PrescriptionHistoryPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4">
+              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition" onClick={() => router.push(`/order/${latestOrder.order_id}/summary`)}>
                 <div className="flex-1 text-sm">
                   <p className="font-medium">Order ID: {latestOrder.order_id}</p>
                   <p className="mt-1">สถานะ: {latestOrder.status}</p>
@@ -158,7 +158,8 @@ export default function PrescriptionHistoryPage() {
               {pastOrders.map((order, index) => (
                 <li
                   key={index}
-                  className="bg-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-start gap-4 shadow-sm hover:shadow-md transition"
+                  className="bg-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-start gap-4 shadow-sm hover:shadow-md transition cursor-pointer hover:bg-gray-50"
+                  onClick={() => router.push(`/order/${order.order_id}/summary`)}
                 >
                   <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
                     No Img
