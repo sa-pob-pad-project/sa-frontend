@@ -20,8 +20,8 @@ export async function AppointmentSlots(doctor_id) {
 export async function LastestAppointment() {
     const res = await http.get("/api/appointment/v1/patient/history/latest");
     const data = res.data;
-    if (res.status === 200) return data;
-    else if (res.status === 204) throw new Error(data.error || "No appointments found");
+    if (res.status === 200 || res.status === 204) return data;
+    // else if (res.status === 204) throw new Error(data.error || "No appointments found");
     else if (res.status === 401) throw new Error(data.error || "Unauthorized");
     else if (res.status === 500) throw new Error(data.error || "Internal Server Error");
     else throw new Error(data.error || `Unexpected status: ${res.status}`);
