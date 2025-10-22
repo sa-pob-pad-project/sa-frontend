@@ -116,7 +116,7 @@ export default function ProfilePage() {
           </h1>
           <div className="flex gap-3 mt-3 flex-wrap justify-center">
             <Tag label={`🎂 ${profile.age} ปี`} />
-            <Tag label={profile.gender === "ชาย" ? "♂ ชาย" : "♀ หญิง"} />
+            <Tag label={`${profile.gender}`} />
             <Tag label={`🩸 ${profile.bloodType}`} />
           </div>
         </div>
