@@ -71,7 +71,17 @@ export default function LandingPage() {
   }, [router]);
 
   const goTo = (path: string) => router.push(path);
-  const formatDate = (d: string) => new Date(d).toString()
+  const formatDate = (d: string) => {
+    const date = new Date(d);
+    date.setHours(date.getHours() - 7);
+    return date.toLocaleString("th-TH", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   if (loading) {
     return (
