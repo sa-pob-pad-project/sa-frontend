@@ -98,7 +98,18 @@ export default function AppointmentsPage() {
     );
   }
 
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleString("th-TH");
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    // Backend ส่งมาแล้วบวก 7 ชั่วโมง แต่ timezone เป็น UTC ดังนั้นต้องลบ 7 ชั่วโมงออก
+    date.setHours(date.getHours() - 7);
+    return date.toLocaleString("th-TH", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#E9FFF2] to-white flex flex-col">

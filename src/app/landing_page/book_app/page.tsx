@@ -73,14 +73,17 @@ export default function CheckRightsPage() {
     fetchData();
   }, []);
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleString("th-TH", {
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    date.setHours(date.getHours() - 7);
+    return date.toLocaleString("th-TH", {
       day: "2-digit",
       month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
 
   if (loading) {
     return (
