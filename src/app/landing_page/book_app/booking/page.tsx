@@ -42,6 +42,11 @@ const formatSlotRange = (slot: SlotDetail) => {
   return `${start} - ${end}`;
 };
 
+const adjustTimeForTimezone = (time: string) => {
+  const dt = DateTime.fromISO(time);
+  return dt.minus({ hours: 7 }).toISO();
+};
+
 export default function BookingPage() {
   const router = useRouter();
 
@@ -89,12 +94,22 @@ export default function BookingPage() {
 
       slotsKeys.forEach((key) => {
         try {
-          // Parse the ISO date with timezone and extract just the date part
-          const dt = DateTime.fromISO(key);
+          const adjustedKey = adjustTimeForTimezone(key);
+          if (!adjustedKey) {
+            console.warn("Failed to adjust slot date key:", key);
+            return;
+          }
+          
+          const dt = DateTime.fromISO(adjustedKey);
           const normalizedKey = dt.toISODate();
           
           if (normalizedKey) {
-            newSlotMap.set(normalizedKey, slots[key]);
+            const adjustedSlots = slots[key].map(slot => ({
+              ...slot,
+              start_time: adjustTimeForTimezone(slot.start_time) || slot.start_time,
+              end_time: adjustTimeForTimezone(slot.end_time) || slot.end_time,
+            }));
+            newSlotMap.set(normalizedKey, adjustedSlots);
             normalizedDates.push(normalizedKey);
           } else {
             console.warn("Invalid slot date key:", key);
