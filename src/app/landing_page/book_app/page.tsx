@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ArrowLeft, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, MoreHorizontal, Calendar, Package } from "lucide-react";
 import Image from "next/image";
 import { LastestAppointment } from "@/services/appointmentService";
 import { latestOrder } from "@/services/apiService";
@@ -135,12 +135,24 @@ export default function CheckRightsPage() {
                 <p className="text-gray-600 mt-1">การจัดส่ง: {latestOrderData.delivery_status}</p>
                 <p className="text-gray-600 mt-1">รวมราคา: {latestOrderData.total_amount} บาท</p>
                 <p className="text-gray-600 mt-1">
-                  รายการยา: {latestOrderData.order_items.map(i => i.medicine_name).join(", ")}
+                  รายการยา: {latestOrderData.order_items && latestOrderData.order_items.length > 0
+                    ? latestOrderData.order_items.map(i => i.medicine_name).join(", ")
+                    : "ไม่มีรายการยา"}
                 </p>
               </div>
             </div>
           ) : (
-            <p className="text-gray-600">ไม่มีการสั่งยาครั้งล่าสุด</p>
+            <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 p-8 flex flex-col items-center justify-center text-center min-h-40">
+              <Package className="w-12 h-12 text-gray-400 mb-3" />
+              <p className="text-gray-600 font-medium">ยังไม่มีการสั่งยา</p>
+              <p className="text-gray-500 text-sm mt-1">คุณไม่มีประวัติการสั่งยาครั้งล่าสุด</p>
+              <button
+                onClick={() => router.push("/order")}
+                className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+              >
+                สั่งยาเลย
+              </button>
+            </div>
           )}
         </section>
 
@@ -177,7 +189,17 @@ export default function CheckRightsPage() {
               </li>
             </ul>
           ) : (
-            <p className="text-gray-600">ไม่มีประวัติการนัดล่าสุด</p>
+            <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 p-8 flex flex-col items-center justify-center text-center min-h-40">
+              <Calendar className="w-12 h-12 text-gray-400 mb-3" />
+              <p className="text-gray-600 font-medium">ยังไม่มีการนัดหมอ</p>
+              <p className="text-gray-500 text-sm mt-1">คุณยังไม่มีประวัติการนัดพบแพทย์</p>
+              <button
+                onClick={() => router.push("/landing_page/book_app/booking")}
+                className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+              >
+                นัดหมอเลย
+              </button>
+            </div>
           )}
         </section>
 
