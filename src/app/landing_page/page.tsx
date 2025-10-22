@@ -71,7 +71,7 @@ export default function LandingPage() {
   }, [router]);
 
   const goTo = (path: string) => router.push(path);
-  const formatDate = (d: string) => new Date(d).toLocaleString("th-TH");
+  const formatDate = (d: string) => new Date(d).toString()
 
   if (loading) {
     return (
