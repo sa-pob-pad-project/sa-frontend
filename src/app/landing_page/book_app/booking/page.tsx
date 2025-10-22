@@ -94,16 +94,12 @@ export default function BookingPage() {
 
       slotsKeys.forEach((key) => {
         try {
-          const adjustedKey = adjustTimeForTimezone(key);
-          if (!adjustedKey) {
-            console.warn("Failed to adjust slot date key:", key);
-            return;
-          }
-          
-          const dt = DateTime.fromISO(adjustedKey);
+          // Parse the date directly without timezone adjustment for date extraction
+          const dt = DateTime.fromISO(key);
           const normalizedKey = dt.toISODate();
           
           if (normalizedKey) {
+            // Only adjust times, not dates
             const adjustedSlots = slots[key].map(slot => ({
               ...slot,
               start_time: adjustTimeForTimezone(slot.start_time) || slot.start_time,
@@ -244,7 +240,7 @@ export default function BookingPage() {
               onChange={(value) => handleDateChange(value as Date)}
               value={selectedDate ?? undefined}
               minDate={new Date()}
-              locale="th-TH"
+              locale="en-US"
               tileDisabled={({ date, view }) => {
                 if (view !== "month") {
                   return false;
